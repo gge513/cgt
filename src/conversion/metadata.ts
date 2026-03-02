@@ -16,7 +16,7 @@ const RETRY_DELAY_MS = 1000; // Exponential backoff starting at 1 second
  * Extract JSON from Claude response
  * Handles plain JSON, markdown code blocks, and nested objects
  */
-function extractJsonFromResponse(text: string): Record<string, any> {
+export function extractJsonFromResponse(text: string): Record<string, any> {
   // Try direct parsing first
   try {
     return JSON.parse(text);
