@@ -1,7 +1,19 @@
+/**
+ * KMS Strategic Actions Endpoint (Cached)
+ *
+ * Manages user actions on decisions (escalate, resolve, mark high-priority).
+ * GET: Returns audit log of executed actions (cached)
+ * POST: Execute an action and update KMS store
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
 import { validateAuth } from '@/lib/auth';
+import { cacheGet, cacheSet, cacheInvalidatePattern } from '@/lib/cache';
+import { getLogger } from '@/src/utils/logging';
+
+const logger = getLogger();
 
 interface ActionRecord {
   decisionId: string;
@@ -146,14 +158,22 @@ export async function POST(request: NextRequest) {
     // Save updated store
     saveActions(store);
 
+    // Invalidate related caches
+    cacheInvalidatePattern('actions:');
+    cacheInvalidatePattern('summary');
+    logger.debug(`Cache invalidated for executed action: ${action}`);
+
     return NextResponse.json({
       success: true,
       action: actionRecord,
       totalActions: store.actions.length,
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error(`Failed to execute action: ${message}`);
+
     return NextResponse.json(
-      { error: 'Failed to execute action', details: String(error) },
+      { error: 'Failed to execute action', details: message },
       { status: 500 }
     );
   }
@@ -170,17 +190,34 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Check TTL cache first
+    const cacheKey = 'actions:list';
+    const cached = cacheGet(cacheKey);
+    if (cached) {
+      logger.debug('Actions list returned from cache');
+      return NextResponse.json(cached);
+    }
+
     const store = loadActions();
 
-    return NextResponse.json({
+    const result = {
       version: store.version,
       lastUpdated: store.lastUpdated,
       totalActions: store.actions.length,
       actions: store.actions,
-    });
+    };
+
+    // Cache the result (30 seconds)
+    cacheSet(cacheKey, result);
+    logger.debug('Actions list cached');
+
+    return NextResponse.json(result);
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error(`Failed to load actions: ${message}`);
+
     return NextResponse.json(
-      { error: 'Failed to load actions', details: String(error) },
+      { error: 'Failed to load actions', details: message },
       { status: 500 }
     );
   }

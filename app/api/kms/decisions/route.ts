@@ -1,7 +1,16 @@
+/**
+ * KMS Decisions Endpoint (Cached)
+ *
+ * Returns all decisions across meetings with optional filtering.
+ * Uses dual-layer caching with query-aware cache keys.
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
-import * as fs from 'fs';
-import * as path from 'path';
 import { validateAuth } from '@/lib/auth';
+import { getKMSData, cacheGet, cacheSet } from '@/lib/cache';
+import { getLogger } from '@/src/utils/logging';
+
+const logger = getLogger();
 
 export async function GET(request: NextRequest) {
   // Validate authentication first
@@ -14,16 +23,31 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const kmsPath = path.join(process.cwd(), '.processed_kms.json');
+    // Get query parameters for filtering
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const severity = searchParams.get('severity');
+    const keyword = searchParams.get('keyword');
 
-    if (!fs.existsSync(kmsPath)) {
+    // Create cache key based on query parameters
+    const cacheKey = `decisions:${status || ''}:${severity || ''}:${keyword || ''}`;
+
+    // Check TTL cache first
+    const cached = cacheGet(cacheKey);
+    if (cached) {
+      logger.debug(`Decisions returned from cache: ${cacheKey}`);
+      return NextResponse.json(cached);
+    }
+
+    // Load KMS data (uses mtime cache)
+    const kmsData = getKMSData();
+
+    if (!kmsData || !kmsData.meetings) {
       return NextResponse.json(
         { error: 'KMS data not found. Run npm run analyze first.' },
         { status: 404 }
       );
     }
-
-    const kmsData = JSON.parse(fs.readFileSync(kmsPath, 'utf-8'));
 
     // Extract decisions from all meetings
     const decisions: any[] = [];
@@ -34,12 +58,6 @@ export async function GET(request: NextRequest) {
         }
       });
     }
-
-    // Get query parameters for filtering
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
-    const severity = searchParams.get('severity');
-    const keyword = searchParams.get('keyword');
 
     // Filter decisions
     let filtered = decisions;
@@ -61,14 +79,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
+    const result = {
       total: decisions.length,
       filtered: filtered.length,
       decisions: filtered,
-    });
+    };
+
+    // Cache the filtered result (30 seconds)
+    cacheSet(cacheKey, result);
+    logger.debug(`Decisions cached: ${cacheKey}`);
+
+    return NextResponse.json(result);
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error(`Decisions endpoint failed: ${message}`);
+
     return NextResponse.json(
-      { error: 'Failed to fetch decisions', details: String(error) },
+      { error: 'Failed to fetch decisions', details: message },
       { status: 500 }
     );
   }

@@ -1,7 +1,18 @@
+/**
+ * KMS Summary Endpoint (Cached)
+ *
+ * Returns aggregated statistics across all meetings.
+ * Uses dual-layer caching:
+ * - File mtime cache: Automatic invalidation when KMS file changes
+ * - TTL cache: 30-second cache of aggregated results
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
-import * as fs from 'fs';
-import * as path from 'path';
 import { validateAuth } from '@/lib/auth';
+import { getKMSData, cacheGet, cacheSet } from '@/lib/cache';
+import { getLogger } from '@/src/utils/logging';
+
+const logger = getLogger();
 
 export async function GET(request: NextRequest) {
   // Validate authentication first
@@ -14,16 +25,22 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const kmsPath = path.join(process.cwd(), '.processed_kms.json');
+    // Check TTL cache first for aggregated results
+    const cachedSummary = cacheGet('summary');
+    if (cachedSummary) {
+      logger.debug('Summary returned from TTL cache');
+      return NextResponse.json(cachedSummary);
+    }
 
-    if (!fs.existsSync(kmsPath)) {
+    // Load KMS data (uses mtime cache)
+    const kmsData = getKMSData();
+
+    if (!kmsData || !kmsData.meetings) {
       return NextResponse.json(
         { error: 'KMS data not found. Run npm run analyze first.' },
         { status: 404 }
       );
     }
-
-    const kmsData = JSON.parse(fs.readFileSync(kmsPath, 'utf-8'));
 
     // Calculate statistics by aggregating from all meetings
     const decisions: any[] = [];
@@ -63,7 +80,7 @@ export async function GET(request: NextRequest) {
     const totalItems = decisions.length + actions.length + commitments.length;
     const escalatedCount = decisions.filter((d: any) => d.is_escalated).length;
 
-    return NextResponse.json({
+    const summary = {
       summary: {
         total_decisions: decisions.length,
         total_actions: actions.length,
@@ -80,10 +97,19 @@ export async function GET(request: NextRequest) {
       high_risk_count: riskCounts.high,
       last_updated: kmsData.lastUpdated || 'Unknown',
       total_meetings: Object.keys(kmsData.meetings || {}).length,
-    });
+    };
+
+    // Cache the aggregated result (30 seconds)
+    cacheSet('summary', summary);
+    logger.debug('Summary computed and cached');
+
+    return NextResponse.json(summary);
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error(`Summary endpoint failed: ${message}`);
+
     return NextResponse.json(
-      { error: 'Failed to fetch summary', details: String(error) },
+      { error: 'Failed to fetch summary', details: message },
       { status: 500 }
     );
   }
