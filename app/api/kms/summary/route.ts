@@ -5,9 +5,12 @@
  * Uses dual-layer caching:
  * - File mtime cache: Automatic invalidation when KMS file changes
  * - TTL cache: 30-second cache of aggregated results
+ *
+ * Type-safe: Uses proper KMS types from src/types.ts
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import type { KMSStore, KMSDecision, KMSActionItem, KMSCommitment, KMSRisk } from '@/src/types';
 import { validateAuth } from '@/lib/auth';
 import { getKMSData, cacheGet, cacheSet } from '@/lib/cache';
 import { getLogger } from '@/src/utils/logging';
@@ -33,7 +36,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Load KMS data (uses mtime cache)
-    const kmsData = getKMSData();
+    const kmsData: KMSStore = getKMSData();
 
     if (!kmsData || !kmsData.meetings) {
       return NextResponse.json(
@@ -43,18 +46,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate statistics by aggregating from all meetings
-    const decisions: any[] = [];
-    const actions: any[] = [];
-    const commitments: any[] = [];
-    const risks: any[] = [];
+    const decisions: KMSDecision[] = [];
+    const actions: KMSActionItem[] = [];
+    const commitments: KMSCommitment[] = [];
+    const risks: KMSRisk[] = [];
 
     if (kmsData.meetings && typeof kmsData.meetings === 'object') {
-      Object.values(kmsData.meetings).forEach((meeting: any) => {
+      Object.values(kmsData.meetings).forEach((meeting) => {
         if (meeting.decisions && Array.isArray(meeting.decisions)) {
           decisions.push(...meeting.decisions);
         }
-        if (meeting.actions && Array.isArray(meeting.actions)) {
-          actions.push(...meeting.actions);
+        if (meeting.actionItems && Array.isArray(meeting.actionItems)) {
+          actions.push(...meeting.actionItems);
         }
         if (meeting.commitments && Array.isArray(meeting.commitments)) {
           commitments.push(...meeting.commitments);

@@ -6,6 +6,8 @@
  *
  * Uses Zod schema validation to prevent injection attacks
  * and ensure data integrity.
+ *
+ * Type-safe: Uses proper types for validation records
  */
 
 import { NextRequest, NextResponse } from 'next/server';

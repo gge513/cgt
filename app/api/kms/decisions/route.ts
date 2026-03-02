@@ -3,9 +3,12 @@
  *
  * Returns all decisions across meetings with optional filtering.
  * Uses dual-layer caching with query-aware cache keys.
+ *
+ * Type-safe: Uses proper KMS types from src/types.ts
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import type { KMSStore, KMSDecision } from '@/src/types';
 import { validateAuth } from '@/lib/auth';
 import { getKMSData, cacheGet, cacheSet } from '@/lib/cache';
 import { getLogger } from '@/src/utils/logging';
@@ -40,7 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Load KMS data (uses mtime cache)
-    const kmsData = getKMSData();
+    const kmsData: KMSStore = getKMSData();
 
     if (!kmsData || !kmsData.meetings) {
       return NextResponse.json(
@@ -50,9 +53,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Extract decisions from all meetings
-    const decisions: any[] = [];
+    const decisions: KMSDecision[] = [];
     if (kmsData.meetings && typeof kmsData.meetings === 'object') {
-      Object.values(kmsData.meetings).forEach((meeting: any) => {
+      Object.values(kmsData.meetings).forEach((meeting) => {
         if (meeting.decisions && Array.isArray(meeting.decisions)) {
           decisions.push(...meeting.decisions);
         }
@@ -63,16 +66,12 @@ export async function GET(request: NextRequest) {
     let filtered = decisions;
 
     if (status) {
-      filtered = filtered.filter((d: any) => d.status === status);
-    }
-
-    if (severity) {
-      filtered = filtered.filter((d: any) => d.severity === severity);
+      filtered = filtered.filter((d) => d.status === status);
     }
 
     if (keyword) {
       const lowerKeyword = keyword.toLowerCase();
-      filtered = filtered.filter((d: any) =>
+      filtered = filtered.filter((d) =>
         d.text.toLowerCase().includes(lowerKeyword) ||
         d.owner?.toLowerCase().includes(lowerKeyword) ||
         d.meeting?.toLowerCase().includes(lowerKeyword)

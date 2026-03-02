@@ -4,6 +4,8 @@
  * Manages user actions on decisions (escalate, resolve, mark high-priority).
  * GET: Returns audit log of executed actions (cached)
  * POST: Execute an action and update KMS store
+ *
+ * Type-safe: Uses proper types for action records
  */
 
 import { NextRequest, NextResponse } from 'next/server';
