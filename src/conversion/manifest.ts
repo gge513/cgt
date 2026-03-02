@@ -6,7 +6,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
-import { Manifest, ProcessedFile } from "../types";
+import { Manifest } from "../types";
 import { getLogger } from "../utils/logging";
 
 const logger = getLogger();
@@ -72,10 +72,13 @@ export class ManifestManager {
   }
 
   /**
-   * Save manifest to disk atomically
+   * Save manifest to disk atomically with retry logic
    * Writes to temp file first, then renames to prevent corruption
+   * Retries up to 3 times on failure
    */
-  saveManifest(manifest: Manifest): void {
+  saveManifest(manifest: Manifest, retryCount: number = 0): void {
+    const MAX_RETRIES = 3;
+
     try {
       // Update last_run timestamp
       manifest.last_run = new Date().toISOString();
@@ -88,17 +91,40 @@ export class ManifestManager {
       logger.debug(`Manifest saved with ${manifest.processed_files.length} entries`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      logger.error(`Could not save manifest: ${message}`);
-      // Clean up temp file if it exists
-      this.cleanupTempFile();
+
+      if (retryCount < MAX_RETRIES) {
+        logger.warn(
+          `Failed to save manifest (attempt ${retryCount + 1}/${MAX_RETRIES}): ${message}. Retrying...`
+        );
+        // Small delay before retry
+        setTimeout(() => {
+          this.saveManifest(manifest, retryCount + 1);
+        }, 100 * (retryCount + 1));
+      } else {
+        logger.error(
+          `Could not save manifest after ${MAX_RETRIES} retries: ${message}`
+        );
+        // Clean up temp file if it exists
+        this.cleanupTempFile();
+      }
     }
   }
 
   /**
-   * Check if a file has already been processed
+   * Check if a file has already been processed (converted)
    * Returns true only if file exists in manifest AND hash matches (not modified)
+   * Respects force flag
    */
-  isFileProcessed(filePath: string, manifest: Manifest): boolean {
+  isConversionNeeded(
+    filePath: string,
+    manifest: Manifest,
+    force: boolean = false
+  ): boolean {
+    if (force) {
+      logger.debug(`Force flag set, will reprocess: ${path.basename(filePath)}`);
+      return true;
+    }
+
     const fileName = path.basename(filePath);
 
     for (const entry of manifest.processed_files) {
@@ -106,19 +132,63 @@ export class ManifestManager {
         // File was processed before, check if it was modified
         const currentHash = this.computeFileHash(filePath);
         if (currentHash && currentHash === entry.conversions.file_hash) {
-          // File unchanged, skip it
-          logger.debug(`File already processed: ${fileName}`);
-          return true;
+          // File unchanged, skip conversion
+          logger.debug(`Conversion cache hit: ${fileName}`);
+          return false;
         } else {
           // File was modified, needs re-processing
-          logger.debug(`File modified, will reprocess: ${fileName}`);
-          return false;
+          logger.debug(`File modified, will reconvert: ${fileName}`);
+          return true;
         }
       }
     }
 
     // File not in manifest, it's new
-    return false;
+    logger.debug(`New file, will convert: ${fileName}`);
+    return true;
+  }
+
+  /**
+   * Check if analysis is needed for a file with given model
+   * Returns true if file needs analysis with this specific model
+   * Respects force flag
+   */
+  isAnalysisNeeded(
+    outputFile: string,
+    model: string,
+    manifest: Manifest,
+    force: boolean = false
+  ): boolean {
+    if (force) {
+      logger.debug(`Force flag set, will re-analyze: ${outputFile} with ${model}`);
+      return true;
+    }
+
+    // Find the processed file entry
+    const entry = manifest.processed_files.find(
+      (f) => f.output_file === outputFile
+    );
+
+    if (!entry) {
+      logger.debug(`File not in manifest, will analyze: ${outputFile}`);
+      return true;
+    }
+
+    // Check if analysis exists for this model
+    if (entry.analyses && entry.analyses[model]) {
+      logger.debug(`Analysis cache hit: ${outputFile} with model ${model}`);
+      return false;
+    }
+
+    logger.debug(`No analysis cache for ${outputFile} with model ${model}, will analyze`);
+    return true;
+  }
+
+  /**
+   * Deprecated: Use isConversionNeeded instead
+   */
+  isFileProcessed(filePath: string, manifest: Manifest): boolean {
+    return !this.isConversionNeeded(filePath, manifest, false);
   }
 
   /**
@@ -130,26 +200,84 @@ export class ManifestManager {
     outputFile: string,
     fileHash: string
   ): void {
-    // Remove existing entry if it exists (update case)
-    manifest.processed_files = manifest.processed_files.filter(
-      (f) => f.input_file !== inputFile
-    );
+    // Check if entry already exists
+    let entry = manifest.processed_files.find((f) => f.input_file === inputFile);
 
-    // Add new entry
-    const entry: ProcessedFile = {
-      input_file: inputFile,
-      output_file: outputFile,
-      conversions: {
+    if (entry) {
+      // Update existing entry
+      entry.conversions = {
         file_hash: fileHash,
         converted_at: new Date().toISOString(),
         source_file: inputFile,
         output_file: outputFile,
-      },
-      analyses: {},
+      };
+    } else {
+      // Create new entry
+      entry = {
+        input_file: inputFile,
+        output_file: outputFile,
+        conversions: {
+          file_hash: fileHash,
+          converted_at: new Date().toISOString(),
+          source_file: inputFile,
+          output_file: outputFile,
+        },
+        analyses: {},
+      };
+      manifest.processed_files.push(entry);
+    }
+
+    logger.debug(`Recorded conversion: ${inputFile} → ${outputFile}`);
+  }
+
+  /**
+   * Record a successful analysis in the manifest
+   * Tracks which model was used and when
+   */
+  recordAnalysis(
+    manifest: Manifest,
+    outputFile: string,
+    model: string,
+    reportFile: string
+  ): void {
+    const entry = manifest.processed_files.find((f) => f.output_file === outputFile);
+
+    if (!entry) {
+      logger.warn(
+        `Could not record analysis: ${outputFile} not found in manifest`
+      );
+      return;
+    }
+
+    entry.analyses[model] = {
+      model,
+      analyzed_at: new Date().toISOString(),
+      report_file: reportFile,
     };
 
-    manifest.processed_files.push(entry);
-    logger.debug(`Recorded conversion: ${inputFile} → ${outputFile}`);
+    logger.debug(`Recorded analysis: ${outputFile} with model ${model}`);
+  }
+
+  /**
+   * Clear all analysis cache entries (for --force-analyze flag)
+   */
+  clearAnalysisCache(manifest: Manifest): void {
+    for (const entry of manifest.processed_files) {
+      entry.analyses = {};
+    }
+    logger.info("Cleared all analysis cache entries");
+  }
+
+  /**
+   * Clear entire manifest (for --force-all flag)
+   */
+  clearManifest(): Manifest {
+    logger.info("Clearing entire manifest");
+    return {
+      version: 1,
+      last_run: new Date().toISOString(),
+      processed_files: [],
+    };
   }
 
   /**

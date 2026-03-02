@@ -9,10 +9,10 @@ import { getLogger } from "../utils/logging";
 import { parseFrontmatter, extractMarkdownContent } from "../utils/parsing";
 import { synthesizeAnalysis } from "./synthesisCoordinator";
 import { generateMarkdownReport } from "./reportGenerator";
+import { ManifestManager } from "../conversion/manifest";
 import {
   TranscriptMetadata,
   Manifest,
-  AnalysisCacheEntry,
 } from "../types";
 
 const logger = getLogger();
@@ -22,6 +22,7 @@ export interface AnalysisOptions {
   outputDir: string;
   model: string;
   force?: boolean;
+  forceAnalyze?: boolean;
 }
 
 /**
@@ -123,7 +124,7 @@ function generateReportFilename(
 }
 
 /**
- * Run analysis on converted markdown files
+ * Run analysis on converted markdown files with caching support
  */
 export async function analyzeConvertedFiles(
   options: AnalysisOptions,
@@ -131,14 +132,19 @@ export async function analyzeConvertedFiles(
 ): Promise<{
   analyzed: number;
   failed: number;
+  skipped: number;
   errors: string[];
   reportFiles: string[];
   manifest: Manifest;
 }> {
   let markdownFiles: string[] = [];
+  const force = options.force || options.forceAnalyze || false;
+  const manifestManager = new ManifestManager();
+
   const stats = {
     analyzed: 0,
     failed: 0,
+    skipped: 0,
     errors: [] as string[],
     reportFiles: [] as string[],
     manifest,
@@ -146,6 +152,12 @@ export async function analyzeConvertedFiles(
 
   try {
     logger.info("🔍 Starting analysis phase...\n");
+
+    // Handle force-analyze flag by clearing analysis cache
+    if (force) {
+      manifestManager.clearAnalysisCache(manifest);
+      logger.info("Force flag set: clearing analysis cache");
+    }
 
     // Read markdown files
     markdownFiles = readMarkdownFiles(options.processingDir);
@@ -157,9 +169,26 @@ export async function analyzeConvertedFiles(
 
     logger.info(`Found ${markdownFiles.length} markdown file(s) to analyze`);
 
-    // Build transcript metadata for all files
-    const transcripts: TranscriptMetadata[] = [];
+    // Check which files need analysis (respecting cache and force flag)
+    const filesToAnalyze: string[] = [];
     for (const mdFile of markdownFiles) {
+      const outputFileName = path.basename(mdFile, ".md") + ".md";
+      if (manifestManager.isAnalysisNeeded(outputFileName, options.model, manifest, force)) {
+        filesToAnalyze.push(mdFile);
+      } else {
+        stats.skipped++;
+        logger.info(`✓ Skipped (cached): ${path.basename(mdFile)}`);
+      }
+    }
+
+    if (filesToAnalyze.length === 0) {
+      logger.info("All files have cached analyses");
+      return stats;
+    }
+
+    // Build transcript metadata for files that need analysis
+    const transcripts: TranscriptMetadata[] = [];
+    for (const mdFile of filesToAnalyze) {
       const metadata = buildTranscriptMetadata(mdFile);
       if (metadata) {
         transcripts.push(metadata);
@@ -170,19 +199,19 @@ export async function analyzeConvertedFiles(
     }
 
     if (transcripts.length === 0) {
-      logger.error("No valid transcripts found");
+      logger.error("No valid transcripts to analyze");
       return stats;
     }
 
     // Run multi-agent analysis
-    logger.info(`Analyzing ${transcripts.length} transcript(s)...\n`);
+    logger.info(`\nAnalyzing ${transcripts.length} transcript(s) with ${options.model}...\n`);
     const report = await synthesizeAnalysis(transcripts);
 
     // Generate markdown report
     const reportContent = generateMarkdownReport(report, options.model);
 
     // Write report (using first markdown file date for naming)
-    const reportFilename = generateReportFilename(markdownFiles[0], options.model);
+    const reportFilename = generateReportFilename(filesToAnalyze[0], options.model);
     const reportPath = path.join(options.outputDir, reportFilename);
 
     if (!fs.existsSync(options.outputDir)) {
@@ -195,22 +224,14 @@ export async function analyzeConvertedFiles(
     stats.reportFiles.push(reportPath);
     stats.analyzed = transcripts.length;
 
-    // Update manifest with analysis cache
-    for (const mdFile of markdownFiles) {
-      const baseName = path.basename(mdFile, ".md");
-      const processedFile = manifest.processed_files.find(
-        (f: any) => f.output_file === `${baseName}.md`
-      );
-
-      if (processedFile) {
-        const cacheEntry: AnalysisCacheEntry = {
-          model: options.model,
-          analyzed_at: new Date().toISOString(),
-          report_file: reportFilename,
-        };
-        processedFile.analyses[options.model] = cacheEntry;
-      }
+    // Update manifest with analysis cache for processed files
+    for (const mdFile of filesToAnalyze) {
+      const outputFileName = path.basename(mdFile, ".md") + ".md";
+      manifestManager.recordAnalysis(manifest, outputFileName, options.model, reportFilename);
     }
+
+    // Save manifest with updated analysis cache
+    manifestManager.saveManifest(manifest);
 
     return stats;
   } catch (error) {

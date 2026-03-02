@@ -114,12 +114,14 @@ async function convertSingleFile(
 }
 
 /**
- * Main conversion orchestration
+ * Main conversion orchestration with force flag support
  */
 export async function convertTranscripts(
   inputDir: string,
-  processingDir: string
+  processingDir: string,
+  options?: { force?: boolean; forceConvert?: boolean }
 ): Promise<ConversionStats> {
+  const force = options?.force || options?.forceConvert || false;
   const stats: ConversionStats = {
     total_found: 0,
     already_processed: 0,
@@ -147,7 +149,13 @@ export async function convertTranscripts(
 
     // Initialize manifest manager and load existing manifest
     const manifestManager = new ManifestManager();
-    const manifest = manifestManager.loadManifest();
+    let manifest = manifestManager.loadManifest();
+
+    // Handle force-all flag
+    if (force) {
+      manifest = manifestManager.clearManifest();
+      logger.info("Force flag set: clearing all cache");
+    }
 
     // Discover all .txt files
     const allFiles = discoverTranscripts(inputDir);
@@ -158,29 +166,29 @@ export async function convertTranscripts(
       return stats;
     }
 
-    // Filter out already-processed files
-    const newFiles: string[] = [];
+    // Filter out already-processed files (respecting force flag)
+    const filesToProcess: string[] = [];
     for (const file of allFiles) {
-      if (manifestManager.isFileProcessed(file, manifest)) {
-        stats.already_processed++;
+      if (manifestManager.isConversionNeeded(file, manifest, force)) {
+        filesToProcess.push(file);
       } else {
-        newFiles.push(file);
+        stats.already_processed++;
       }
     }
 
-    stats.new_files = newFiles.length;
+    stats.new_files = filesToProcess.length;
 
     logger.info(`Found ${stats.total_found} file(s)`);
     logger.info(`  Already processed: ${stats.already_processed}`);
-    logger.info(`  New files: ${stats.new_files}`);
+    logger.info(`  Files to process: ${stats.new_files}`);
 
-    if (newFiles.length === 0) {
-      logger.info("No new files to process");
+    if (filesToProcess.length === 0) {
+      logger.info("No files need processing");
       return stats;
     }
 
-    // Process each new file
-    for (const file of newFiles) {
+    // Process each file that needs conversion
+    for (const file of filesToProcess) {
       const result = await convertSingleFile(file, processingDir, manifestManager, manifest);
 
       if (result.success) {
