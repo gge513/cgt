@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p1
 issue_id: "002"
 tags:
@@ -209,15 +209,15 @@ npm install zod
 
 ## Acceptance Criteria
 
-- [ ] Zod installed and imported
-- [ ] ValidateRequest schema defined and tested
-- [ ] POST handler uses schema validation
-- [ ] Invalid UUID format rejected with 400
-- [ ] Invalid boolean rejected with 400
-- [ ] All error messages are descriptive
-- [ ] KMS data validation prevents corruption
-- [ ] Unit tests verify rejection of invalid input
-- [ ] Integration test: valid input accepted, invalid rejected
+- [x] Zod installed and imported
+- [x] ValidateRequest schema defined and tested
+- [x] POST handler uses schema validation
+- [x] Invalid UUID format rejected with 400
+- [x] Invalid boolean rejected with 400
+- [x] All error messages are descriptive
+- [x] KMS data validation prevents corruption
+- [x] Unit tests verify rejection of invalid input
+- [x] Integration test: valid input accepted, invalid rejected
 
 ---
 

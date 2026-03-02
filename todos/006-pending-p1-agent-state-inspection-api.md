@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p1
 issue_id: "006"
 tags:
@@ -379,17 +379,17 @@ IF NOT status.healthy
 
 ## Acceptance Criteria
 
-- [ ] GET /api/status endpoint created
-- [ ] Returns complete SystemStatus object
-- [ ] Input directory stats computed correctly
-- [ ] Manifest validity checked
-- [ ] KMS data aggregated and counted
-- [ ] Readiness flags accurate
-- [ ] Health flag reflects system state
-- [ ] Error handling for missing files
-- [ ] Caching considered (optional)
-- [ ] Integration tests verify accuracy
-- [ ] Agent can use endpoint for decision logic
+- [x] GET /api/status endpoint created
+- [x] Returns complete SystemStatus object
+- [x] Input directory stats computed correctly
+- [x] Manifest validity checked
+- [x] KMS data aggregated and counted
+- [x] Readiness flags accurate
+- [x] Health flag reflects system state
+- [x] Error handling for missing files
+- [x] Caching considered (optional)
+- [x] Integration tests verify accuracy
+- [x] Agent can use endpoint for decision logic
 
 ---
 

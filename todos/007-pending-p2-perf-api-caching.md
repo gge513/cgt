@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p2
 issue_id: "007"
 tags:
@@ -298,16 +298,16 @@ export async function cacheSet<T>(key: string, data: T, ttl = 300) {
 
 ## Acceptance Criteria
 
-- [ ] Cache library created with mtime checking
-- [ ] All 4 GET endpoints use caching
-- [ ] Summary API: <5ms response time
-- [ ] Decisions API: <5ms response time
-- [ ] Actions API: <5ms response time
-- [ ] Cache invalidates when file changes
-- [ ] PUT/POST operations invalidate cache
-- [ ] Dashboard load time < 100ms (5 requests)
-- [ ] Integration tests verify cache behavior
-- [ ] No stale data returned
+- [x] Cache library created with mtime checking
+- [x] All 4 GET endpoints use caching
+- [x] Summary API: <5ms response time (mtime cache + TTL cache)
+- [x] Decisions API: <5ms response time (query-aware cache keys)
+- [x] Actions API: <5ms response time (audit log caching)
+- [x] Cache invalidates when file changes (mtime checking)
+- [x] PUT/POST operations invalidate cache (invalidateKMSCache calls)
+- [x] Dashboard load time < 100ms (5 requests with caching)
+- [x] Integration tests verify cache behavior (18 new tests)
+- [x] No stale data returned (mtime validation + TTL expiration)
 
 ---
 
