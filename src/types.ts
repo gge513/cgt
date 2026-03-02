@@ -218,3 +218,83 @@ export interface LogEntry {
   message: string;
   context?: Record<string, any>;
 }
+
+// ============================================================================
+// KNOWLEDGE MANAGEMENT SYSTEM (KMS) TYPES
+// ============================================================================
+
+/**
+ * Extracted decision from meeting
+ */
+export interface KMSDecision {
+  id: string;                  // Unique identifier
+  text: string;                // Decision text
+  owner?: string;              // Person/role responsible
+  date: string;                // Decision date (from meeting)
+  meeting: string;             // Source meeting file
+  relatedTopics: string[];     // Related concept tags
+  status: "pending" | "in-progress" | "completed";
+  context?: string;            // Additional context
+}
+
+/**
+ * Extracted action item from meeting
+ */
+export interface KMSActionItem {
+  id: string;                  // Unique identifier
+  text: string;                // Action description
+  owner?: string;              // Person responsible
+  dueDate?: string;            // Expected completion date
+  meeting: string;             // Source meeting file
+  status: "not-started" | "in-progress" | "blocked" | "completed";
+  blockers: string[];          // Known blockers/dependencies
+  context?: string;            // Additional context
+}
+
+/**
+ * Extracted commitment from meeting
+ */
+export interface KMSCommitment {
+  id: string;                  // Unique identifier
+  text: string;                // Commitment text
+  owner?: string;              // Person making commitment
+  dueDate?: string;            // Expected completion date
+  meeting: string;             // Source meeting file
+  status: "pending" | "in-progress" | "completed";
+  context?: string;            // Additional context
+}
+
+/**
+ * Extracted risk from meeting
+ */
+export interface KMSRisk {
+  id: string;                  // Unique identifier
+  text: string;                // Risk description
+  severity: "low" | "medium" | "high";
+  meeting: string;             // Source meeting file
+  mitigation?: string;         // Mitigation strategy
+  context?: string;            // Additional context
+}
+
+/**
+ * Complete KMS data for a single meeting
+ */
+export interface KMSData {
+  meeting: string;             // Meeting identifier
+  analyzedAt: string;          // When KMS was extracted (ISO timestamp)
+  date: string;                // Meeting date
+  model: string;               // Claude model used
+  decisions: KMSDecision[];
+  actionItems: KMSActionItem[];
+  commitments: KMSCommitment[];
+  risks: KMSRisk[];
+}
+
+/**
+ * KMS data store (all meetings)
+ */
+export interface KMSStore {
+  version: 1;
+  lastUpdated: string;         // ISO timestamp
+  meetings: Record<string, KMSData>; // Keyed by meeting name
+}

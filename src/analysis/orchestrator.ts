@@ -10,6 +10,7 @@ import { parseFrontmatter, extractMarkdownContent } from "../utils/parsing";
 import { synthesizeAnalysis } from "./synthesisCoordinator";
 import { generateMarkdownReport } from "./reportGenerator";
 import { ManifestManager } from "../conversion/manifest";
+import { extractKMSData, KMSStoreManager } from "../kms";
 import {
   TranscriptMetadata,
   Manifest,
@@ -226,6 +227,27 @@ export async function analyzeConvertedFiles(
 
     stats.reportFiles.push(reportPath);
     stats.analyzed = transcripts.length;
+
+    // Extract KMS data from report
+    try {
+      logger.debug("Extracting KMS data from analysis report...");
+      const kmsStoreManager = new KMSStoreManager();
+      const meetingDate = (transcripts[0] as any)?.metadata?.date || "Unknown";
+      const meetingName = path.basename(filesToAnalyze[0], ".md");
+
+      const kmsData = await extractKMSData(reportContent, meetingName, meetingDate);
+      kmsStoreManager.recordKMSData(kmsData);
+
+      logger.debug(
+        `Extracted KMS data: ${kmsData.decisions.length} decisions, ` +
+        `${kmsData.actionItems.length} actions, ` +
+        `${kmsData.commitments.length} commitments, ` +
+        `${kmsData.risks.length} risks`
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.warn(`KMS extraction failed (non-fatal): ${message}`);
+    }
 
     // Update manifest with analysis cache for processed files
     for (const mdFile of filesToAnalyze) {

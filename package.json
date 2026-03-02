@@ -8,6 +8,7 @@
     "analyze": "ts-node src/cli.ts analyze",
     "convert": "ts-node src/cli.ts convert",
     "analyze-existing": "ts-node src/cli.ts analyze-existing",
+    "kms": "ts-node src/kms-query.ts",
     "build": "tsc",
     "start": "node dist/cli.js analyze",
     "test": "jest",
@@ -26,7 +27,7 @@
   "author": "Claude",
   "license": "ISC",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.13.0",
+    "@anthropic-ai/sdk": "^0.78.0",
     "dotenv": "^16.0.0",
     "glob": "^10.3.0"
   },

@@ -6,6 +6,10 @@
 import * as dotenv from "dotenv";
 import { getLogger } from "./utils/logging";
 import { validateStartupRequirements } from "./utils/validation";
+import { convertTranscripts } from "./conversion/converter";
+import { analyzeConvertedFiles } from "./analysis/orchestrator";
+import { ManifestManager } from "./conversion/manifest";
+import { getModel } from "./utils/client";
 
 // Load environment variables from .env
 dotenv.config();
@@ -77,26 +81,109 @@ async function main(): Promise<void> {
 
   try {
     switch (command) {
-      case "analyze":
+      case "analyze": {
         logger.info("Starting unified pipeline (convert + analyze)");
-        // TODO: Implement full pipeline orchestration
-        console.log("✓ Phase 1: Foundation complete!");
-        console.log("Next: Implement conversion core (Phase 2)");
-        break;
+        const inputDir = "input";
+        const processingDir = "processing";
+        const outputDir = "output";
 
-      case "convert":
+        // Step 1: Convert transcripts
+        logger.info("Step 1: Converting transcripts...");
+        const conversionStats = await convertTranscripts(inputDir, processingDir);
+
+        if (conversionStats.total_found === 0) {
+          logger.warn("No transcript files found in input directory");
+          process.exit(1);
+        }
+
+        logger.info(`Conversion complete: ${conversionStats.successful}/${conversionStats.total_found} successful`);
+
+        // Step 2: Analyze converted files
+        logger.info("Step 2: Analyzing converted files...");
+        const manifestManager = new ManifestManager();
+        let manifest = manifestManager.loadManifest();
+
+        const analysisResult = await analyzeConvertedFiles(
+          {
+            processingDir,
+            outputDir,
+            model: getModel(),
+          },
+          manifest
+        );
+
+        manifest = analysisResult.manifest;
+        manifestManager.saveManifest(manifest);
+
+        logger.info(`Analysis complete: ${analysisResult.analyzed} analyzed, ${analysisResult.skipped} skipped`);
+
+        if (analysisResult.reportFiles.length > 0) {
+          console.log("\n✓ Analysis complete! Reports generated:");
+          analysisResult.reportFiles.forEach(f => console.log(`  - ${f}`));
+        }
+
+        process.exit(analysisResult.exitCode);
+        break;
+      }
+
+      case "convert": {
         logger.info("Starting conversion stage only");
-        // TODO: Implement conversion orchestration
-        console.log("✓ Phase 1: Foundation complete!");
-        console.log("Next: Implement conversion core (Phase 2)");
-        break;
+        const inputDir = "input";
+        const processingDir = "processing";
 
-      case "analyze-existing":
-        logger.info("Starting analysis on existing .md files");
-        // TODO: Implement analysis orchestration
-        console.log("✓ Phase 1: Foundation complete!");
-        console.log("Next: Implement conversion core (Phase 2)");
+        const conversionStats = await convertTranscripts(inputDir, processingDir);
+
+        if (conversionStats.total_found === 0) {
+          logger.warn("No transcript files found in input directory");
+          process.exit(1);
+        }
+
+        logger.info(`Conversion complete: ${conversionStats.successful}/${conversionStats.total_found} successful`);
+
+        if (conversionStats.successful > 0) {
+          console.log(`\n✓ Conversion complete! Files ready in ${processingDir}/`);
+          console.log("Next: npm run analyze-existing  (to analyze converted files)");
+        }
+
+        process.exit(conversionStats.exitCode);
         break;
+      }
+
+      case "analyze-existing": {
+        logger.info("Starting analysis on existing .md files");
+        const processingDir = "processing";
+        const outputDir = "output";
+
+        const manifestManager = new ManifestManager();
+        let manifest = manifestManager.loadManifest();
+
+        const analysisResult = await analyzeConvertedFiles(
+          {
+            processingDir,
+            outputDir,
+            model: getModel(),
+          },
+          manifest
+        );
+
+        manifest = analysisResult.manifest;
+        manifestManager.saveManifest(manifest);
+
+        if (analysisResult.analyzed === 0 && analysisResult.skipped === 0) {
+          logger.warn("No markdown files found in processing directory");
+          process.exit(1);
+        }
+
+        logger.info(`Analysis complete: ${analysisResult.analyzed} analyzed, ${analysisResult.skipped} skipped`);
+
+        if (analysisResult.reportFiles.length > 0) {
+          console.log("\n✓ Analysis complete! Reports generated:");
+          analysisResult.reportFiles.forEach(f => console.log(`  - ${f}`));
+        }
+
+        process.exit(analysisResult.exitCode);
+        break;
+      }
 
       case "--help":
       case "-h":
@@ -116,8 +203,46 @@ async function main(): Promise<void> {
         } else {
           // Default to analyze if no command specified
           logger.info("Starting unified pipeline (convert + analyze) - default");
-          console.log("✓ Phase 1: Foundation complete!");
-          console.log("Next: Implement conversion core (Phase 2)");
+          const inputDir = "input";
+          const processingDir = "processing";
+          const outputDir = "output";
+
+          // Step 1: Convert transcripts
+          logger.info("Step 1: Converting transcripts...");
+          const conversionStats = await convertTranscripts(inputDir, processingDir);
+
+          if (conversionStats.total_found === 0) {
+            logger.warn("No transcript files found in input directory");
+            process.exit(1);
+          }
+
+          logger.info(`Conversion complete: ${conversionStats.successful}/${conversionStats.total_found} successful`);
+
+          // Step 2: Analyze converted files
+          logger.info("Step 2: Analyzing converted files...");
+          const manifestManager = new ManifestManager();
+          let manifest = manifestManager.loadManifest();
+
+          const analysisResult = await analyzeConvertedFiles(
+            {
+              processingDir,
+              outputDir,
+              model: getModel(),
+            },
+            manifest
+          );
+
+          manifest = analysisResult.manifest;
+          manifestManager.saveManifest(manifest);
+
+          logger.info(`Analysis complete: ${analysisResult.analyzed} analyzed, ${analysisResult.skipped} skipped`);
+
+          if (analysisResult.reportFiles.length > 0) {
+            console.log("\n✓ Analysis complete! Reports generated:");
+            analysisResult.reportFiles.forEach(f => console.log(`  - ${f}`));
+          }
+
+          process.exit(analysisResult.exitCode);
         }
     }
   } catch (error) {
