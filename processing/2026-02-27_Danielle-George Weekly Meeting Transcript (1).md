@@ -1,6 +1,6 @@
 ---
 date: 2026-02-27
-concepts: presentation deck development, strategic planning, accomplishments documentation, grant seeking, collaborative work sessions, bird watching, travel, AI tools, KPIs and metrics, organizational strategy
+concepts: presentation deck creation, strategic planning, accomplishments review, grant seeking, collaborative work sessions, bird watching, travel logistics, KPI establishment, design thinking, content synthesis
 ---
 
 # Meeting Transcript

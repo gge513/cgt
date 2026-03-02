@@ -1,29 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { authMiddleware } from './lib/auth';
 
 /**
- * Middleware to protect all /api/kms/* routes with JWT authentication
+ * Middleware to protect all /api/kms/* routes
  *
- * All requests must include Authorization header:
- * Authorization: Bearer <jwt_token>
- *
- * Valid token is required to access any KMS data.
+ * Note: Auth validation is performed in the route handlers themselves
+ * because middleware runs in Edge Runtime which doesn't support Node.js crypto
+ * (required by JWT verification).
  */
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Only protect /api/kms routes
-  if (pathname.startsWith('/api/kms')) {
-    const authError = authMiddleware(request);
-
-    // If authMiddleware returns a response, send the error
-    if (authError) {
-      return authError;
-    }
-  }
-
-  // No auth required or auth passed, continue
+  // Auth is validated in each route handler instead
+  // This allows JWT verification to use Node.js crypto APIs
   return NextResponse.next();
 }
 

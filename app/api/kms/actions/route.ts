@@ -8,6 +8,8 @@
  * Type-safe: Uses proper types for action records
  */
 
+export const runtime = 'nodejs';
+
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import type { KMSDecision } from '@/src/types';

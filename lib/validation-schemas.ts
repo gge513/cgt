@@ -249,14 +249,15 @@ export function tryValidate<T>(
 
 /**
  * Schema for KMS Decision as stored in .processed_kms.json
- * Matches KMSDecision interface exactly
+ * Note: date and meeting fields are optional because the KMS extraction
+ * process doesn't always populate them
  */
 export const kmsDecisionStoreSchema = z.object({
   id: z.string(),
   text: z.string(),
-  owner: z.string().optional(),
-  date: z.string(),
-  meeting: z.string(),
+  owner: z.string().nullish(),
+  date: z.string().optional(),
+  meeting: z.string().optional(),
   relatedTopics: z.array(z.string()),
   status: z.enum(['pending', 'in-progress', 'completed']),
   context: z.string().optional(),
@@ -264,14 +265,14 @@ export const kmsDecisionStoreSchema = z.object({
 
 /**
  * Schema for KMS Action Item as stored in .processed_kms.json
- * Matches KMSActionItem interface exactly
+ * Note: dueDate and meeting fields are optional/nullable as extraction doesn't populate them
  */
 export const kmsActionItemStoreSchema = z.object({
   id: z.string(),
   text: z.string(),
-  owner: z.string().optional(),
-  dueDate: z.string().optional(),
-  meeting: z.string(),
+  owner: z.string().nullish(),
+  dueDate: z.string().nullish(),
+  meeting: z.string().optional(),
   status: z.enum(['not-started', 'in-progress', 'blocked', 'completed']),
   blockers: z.array(z.string()),
   context: z.string().optional(),
@@ -279,27 +280,27 @@ export const kmsActionItemStoreSchema = z.object({
 
 /**
  * Schema for KMS Commitment as stored in .processed_kms.json
- * Matches KMSCommitment interface exactly
+ * Note: dueDate and meeting fields are optional/nullable as extraction doesn't populate them
  */
 export const kmsCommitmentStoreSchema = z.object({
   id: z.string(),
   text: z.string(),
-  owner: z.string().optional(),
-  dueDate: z.string().optional(),
-  meeting: z.string(),
+  owner: z.string().nullish(),
+  dueDate: z.string().nullish(),
+  meeting: z.string().optional(),
   status: z.enum(['pending', 'in-progress', 'completed']),
   context: z.string().optional(),
 });
 
 /**
  * Schema for KMS Risk as stored in .processed_kms.json
- * Matches KMSRisk interface exactly
+ * Note: meeting field is optional as extraction doesn't always populate it
  */
 export const kmsRiskStoreSchema = z.object({
   id: z.string(),
   text: z.string(),
   severity: z.enum(['low', 'medium', 'high']),
-  meeting: z.string(),
+  meeting: z.string().optional(),
   mitigation: z.string().optional(),
   context: z.string().optional(),
 });

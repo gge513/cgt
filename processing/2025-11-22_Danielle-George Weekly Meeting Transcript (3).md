@@ -1,6 +1,6 @@
 ---
 date: 2025-11-22
-concepts: AI ethics, Zen Buddhism, mindfulness and leadership, trust in healthcare, panel discussions, Waterfire Providence, reality and perception, nonprofit management, regenerative medicine, organizational culture
+concepts: AI ethics and impact, Zen Buddhism and mindfulness, Executive leadership, Patient data and trust, Waterfire Providence community, Panel discussions and workshops, Judgment and expectations, Reality and perception, Regenerative medicine
 ---
 
 # Meeting Transcript

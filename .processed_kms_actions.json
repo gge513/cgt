@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "lastUpdated": "2026-03-02T08:15:44.283Z",
+  "actions": [
+    {
+      "decisionId": "test-id-123",
+      "action": "escalate",
+      "executedAt": "2026-03-02T08:11:21.268Z"
+    },
+    {
+      "decisionId": "test-id-123",
+      "action": "escalate",
+      "executedAt": "2026-03-02T08:15:28.555Z"
+    },
+    {
+      "decisionId": "test-id-123",
+      "action": "escalate",
+      "executedAt": "2026-03-02T08:15:44.281Z"
+    }
+  ]
+}

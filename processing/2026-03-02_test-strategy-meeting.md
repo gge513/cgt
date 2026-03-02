@@ -1,6 +1,6 @@
 ---
 date: 2026-03-02
-concepts: Q1 strategy planning, Next.js 16 upgrade, PostgreSQL database migration, Real-time collaboration features, Performance optimization, Infrastructure upgrades, Risk management, Component compatibility testing, Client communication, Project timeline management
+concepts: Next.js 16 upgrade, PostgreSQL database migration, Real-time collaboration features, Performance optimization, Infrastructure upgrades, Dashboard redesign, Risk management, Q1 2026 strategy, Component testing, Client communication
 ---
 
 # Meeting Transcript

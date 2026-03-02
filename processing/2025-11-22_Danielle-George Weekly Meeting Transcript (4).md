@@ -1,6 +1,6 @@
 ---
 date: 2025-11-22
-concepts: AI ethics, Zen Buddhism, mindfulness, trust and transparency, leadership, nonprofit impact, reality and perception, judgment and bias, organizational systems, personal reflection
+concepts: AI ethics, Zen practice and leadership, Artificial intelligence impact, Trust and patient data, Meditation and therapy integration, Reality and perception, Nonprofit community engagement, Waterfire Providence, Judgment and expectation, Cancer research and treatment
 ---
 
 # Meeting Transcript

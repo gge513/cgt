@@ -1,54 +1,54 @@
 {
   "version": 1,
-  "lastUpdated": "2026-03-02T06:46:05.433Z",
+  "lastUpdated": "2026-03-02T08:15:07.282Z",
   "meetings": {
     "2025-11-22_Danielle-George Weekly Meeting Transcript (3)": {
       "meeting": "2025-11-22_Danielle-George Weekly Meeting Transcript (3)",
-      "analyzedAt": "2026-03-02T06:46:05.432Z",
+      "analyzedAt": "2026-03-02T08:15:07.282Z",
       "date": "Unknown",
       "model": "claude-haiku-4-5-20251001",
       "decisions": [
         {
           "id": "DEC001",
-          "text": "Implement system-generated financial controls and accurate bookkeeping categorization to replace manual P&L creation and restore financial accountability within 90 days.",
-          "owner": null,
+          "text": "Replace or remediate the bookkeeper function due to repeated errors, inaccurate P&L reporting, and 930+ days of outstanding reconciliations undermining organizational credibility and fundraising capacity.",
+          "owner": "Quan Heng Sunim",
           "relatedTopics": [
-            "financial management",
-            "accounting systems",
-            "internal controls"
+            "Financial Management",
+            "Personnel Management",
+            "Operational Dysfunction"
           ],
           "status": "pending"
         },
         {
           "id": "DEC002",
-          "text": "Restructure bookkeeper and director roles with clear job descriptions, performance expectations, and compensation aligned with deliverables and organizational sustainability.",
-          "owner": null,
+          "text": "Establish formal job descriptions, performance review schedules, and decision-making authority matrices to create accountability mechanisms across the organization.",
+          "owner": "Danielle Alpher",
           "relatedTopics": [
-            "staffing model",
-            "role clarity",
-            "compensation"
+            "Governance",
+            "Personnel Management",
+            "Organizational Structure"
           ],
           "status": "pending"
         },
         {
           "id": "DEC003",
-          "text": "Establish clear governance framework defining decision authority between abbot, director, finance committee, and planning committee with documented policies.",
-          "owner": null,
+          "text": "Rationalize cost structure by addressing underperforming personnel, realigning Director compensation to sustainable salary level, and renegotiating unsustainable subsidy relationships with Quantum Americas.",
+          "owner": "George Eastwood",
           "relatedTopics": [
-            "governance",
-            "decision-making",
-            "leadership structure"
+            "Financial Management",
+            "Personnel Management",
+            "Organizational Sustainability"
           ],
           "status": "pending"
         },
         {
           "id": "DEC004",
-          "text": "Develop explicit operational models for residential programs and revenue streams with measurable outcomes and accountability mechanisms.",
-          "owner": null,
+          "text": "Delegate transactional administrative work from Director to appropriate staff, clarify organizational roles and decision authority across interconnected entities (PZC, Quantum Americas, other Zen organizations).",
+          "owner": "Danielle Alpher",
           "relatedTopics": [
-            "revenue sustainability",
-            "residential programs",
-            "strategic planning"
+            "Leadership Capacity",
+            "Organizational Structure",
+            "Role Clarity"
           ],
           "status": "pending"
         }
@@ -56,260 +56,106 @@
       "actionItems": [
         {
           "id": "ACT001",
-          "text": "Hire experienced bookkeeper/accountant (Veronique) to professionalize financial operations and implement QuickBooks properly with accurate categorization protocols.",
-          "owner": null,
+          "text": "Resolve 930+ days of outstanding year-end financial reconciliation backlog and implement system-generated reporting to replace manual P&L creation, enabling timely 990 filing and grant applications.",
+          "owner": "Lori",
           "dueDate": null,
           "status": "not-started",
           "blockers": [
-            "budget constraints",
-            "current bookkeeper underperformance"
+            "Current bookkeeper incompetence",
+            "Lack of financial system infrastructure"
           ]
         },
         {
           "id": "ACT002",
-          "text": "Conduct strategic planning retreat with key stakeholders to align leadership on 3-5 year vision, annual goals, and budgets connected to 50-year strategic vision.",
-          "owner": null,
+          "text": "Conduct formal performance review and capability assessment of bookkeeper (Amy) with documented performance expectations and measurable KPIs; determine fitness for role or execute personnel change.",
+          "owner": "Quan Heng Sunim",
           "dueDate": null,
           "status": "not-started",
           "blockers": [
-            "governance clarity needed first"
+            "Leadership avoidance of personnel decisions"
           ]
         },
         {
           "id": "ACT003",
-          "text": "Create written HR policies covering hiring, termination, compensation review, and performance management; formalize job descriptions with clear performance expectations.",
-          "owner": null,
-          "dueDate": null,
-          "status": "not-started",
-          "blockers": []
-        },
-        {
-          "id": "ACT004",
-          "text": "Implement performance improvement plan (PIP) for current bookkeeper with documented expectations, timeline, and clear performance metrics; establish accountability structure.",
-          "owner": null,
+          "text": "Increase Director compensation from $40/hour to sustainable salary level reflecting 30+ hours/week responsibility for strategic planning, administration, and fundraising; address retention risk.",
+          "owner": "George Eastwood",
           "dueDate": null,
           "status": "not-started",
           "blockers": [
-            "governance framework needed"
+            "Finance committee budget constraints",
+            "Unclear funding source"
+          ]
+        },
+        {
+          "id": "ACT004",
+          "text": "Create formal written job descriptions with clear responsibilities, decision authority, and performance metrics for all staff positions, establishing documented accountability framework.",
+          "owner": "Danielle Alpher",
+          "dueDate": null,
+          "status": "not-started",
+          "blockers": [
+            "Leadership capacity constraints",
+            "Lack of HR infrastructure"
           ]
         },
         {
           "id": "ACT005",
-          "text": "Build financial literacy training program for leadership and board members to improve understanding of financial management, budgeting, and accountability.",
-          "owner": null,
+          "text": "Renegotiate Quantum Americas subsidy relationship and Sangha weekend pricing model; address unpaid invoices from 2019 and establish sustainable cost structure for programming.",
+          "owner": "Quan Heng Sunim",
           "dueDate": null,
           "status": "not-started",
-          "blockers": []
+          "blockers": [
+            "Unclear contractual terms",
+            "Lack of documented cost justification"
+          ]
         }
       ],
       "commitments": [
         {
           "id": "COM001",
-          "text": "Restore financial accountability and implement system-generated financial controls with accurate categorization within 90 days.",
-          "owner": null,
-          "dueDate": "2026-06-02",
+          "text": "Finance committee committed to establishing clear financial controls, accurate P&L reporting, and proper reconciliation procedures to ensure organizational credibility for fundraising and compliance.",
+          "owner": "Mark Houghton",
+          "dueDate": null,
           "status": "pending"
         },
         {
           "id": "COM002",
-          "text": "Establish clear governance structure defining decision authority and reinvigorate committee structures to ensure leadership alignment on financial constraints.",
-          "owner": null,
+          "text": "Leadership committed to implementing governance infrastructure including formal decision-making authority matrices and clear escalation paths to reduce triangulation and improve organizational transparency.",
+          "owner": "Quan Heng Sunim",
           "dueDate": null,
-          "status": "pending"
-        }
-      ],
-      "risks": [
-        {
-          "id": "RISK001",
-          "text": "Loss of key personnel (Danielle considering leaving due to pay/workload issues) could severely impact operations and institutional knowledge if succession planning not established.",
-          "severity": "high",
-          "mitigation": "Develop director role with realistic compensation, support, and delegation; establish succession pipeline through deliberate mentoring."
-        },
-        {
-          "id": "RISK002",
-          "text": "Financial mismanagement could jeopardize nonprofit status, donor trust, and ability to fundraise due to inaccurate bookkeeping and lack of system-generated controls.",
-          "severity": "high",
-          "mitigation": "Implement professional bookkeeping function, accurate categorization protocols, system-generated reporting, and finance committee oversight within 90 days."
-        },
-        {
-          "id": "RISK003",
-          "text": "Governance gaps and absence of formal policies create legal/compliance exposure and enable poor performers to remain without accountability mechanisms.",
-          "severity": "high",
-          "mitigation": "Establish written HR/finance policies, document hiring/termination procedures, clarify decision authority, and create performance review cycles."
-        },
-        {
-          "id": "RISK004",
-          "text": "Continued operational dysfunction could result in declining practice participation and inability to attract/retain quality staff due to low compensation and unclear roles.",
-          "severity": "medium",
-          "mitigation": "Bridge mission and operations by demonstrating that operational excellence serves contemplative mission; realign staffing with market rates and clear expectations."
-        }
-      ]
-    },
-    "2026-03-02_test-strategy-meeting": {
-      "meeting": "2026-03-02_test-strategy-meeting",
-      "analyzedAt": "2026-03-02T06:22:09.502Z",
-      "date": "Unknown",
-      "model": "claude-haiku-4-5-20251001",
-      "decisions": [
-        {
-          "id": "DEC001",
-          "text": "Defer real-time collaboration features to Q2 2026 due to bandwidth constraints, prioritizing PostgreSQL migration and Next.js upgrade in Q1",
-          "owner": "Alice",
-          "relatedTopics": [
-            "roadmap prioritization",
-            "capacity planning",
-            "feature deferral"
-          ],
-          "status": "pending"
-        },
-        {
-          "id": "DEC002",
-          "text": "Proceed with PostgreSQL migration in Q1 2026 as critical infrastructure modernization initiative required for scalability",
-          "owner": "Bob",
-          "relatedTopics": [
-            "database scalability",
-            "infrastructure modernization",
-            "technical debt"
-          ],
-          "status": "pending"
-        },
-        {
-          "id": "DEC003",
-          "text": "Execute Next.js 16 upgrade with 2-week timeline to reduce build pipeline bottlenecks and improve developer productivity",
-          "owner": "Bob",
-          "relatedTopics": [
-            "performance optimization",
-            "build pipeline",
-            "technical infrastructure"
-          ],
-          "status": "pending"
-        },
-        {
-          "id": "DEC004",
-          "text": "Implement phased sequencing of three concurrent initiatives (PostgreSQL migration, Next.js upgrade, dashboard features) instead of parallel execution",
-          "owner": "Alice",
-          "relatedTopics": [
-            "roadmap sequencing",
-            "dependency mapping",
-            "timeline compression"
-          ],
-          "status": "pending"
-        },
-        {
-          "id": "DEC005",
-          "text": "Escalate capacity constraints and financial modeling requirements to executive leadership before finalizing Q1 execution plan",
-          "owner": "Alice",
-          "relatedTopics": [
-            "capacity planning",
-            "financial exposure",
-            "executive alignment"
-          ],
-          "status": "pending"
-        }
-      ],
-      "actionItems": [
-        {
-          "id": "ACT001",
-          "text": "Develop comprehensive PostgreSQL migration risk mitigation plan including rollback procedures, testing protocols, and zero-downtime migration strategies",
-          "owner": "Bob",
-          "dueDate": "2026-03-08",
-          "status": "not-started",
-          "blockers": []
-        },
-        {
-          "id": "ACT002",
-          "text": "Establish formal capacity planning framework quantifying available engineering hours and allocating resources across Q1 initiatives with trade-off decisions",
-          "owner": "Diana",
-          "dueDate": null,
-          "status": "not-started",
-          "blockers": []
-        },
-        {
-          "id": "ACT003",
-          "text": "Create and document detailed PostgreSQL migration rollback plan with pre-migration data snapshots and clear decision points for pause/rollback",
-          "owner": "Bob",
-          "dueDate": "2026-03-22",
-          "status": "not-started",
-          "blockers": []
-        },
-        {
-          "id": "ACT004",
-          "text": "Implement weekly sales-product sync with structured feedback loop to identify emerging client needs and monitor deal pipeline impacts from feature deferrals",
-          "owner": "Alice",
-          "dueDate": null,
-          "status": "not-started",
-          "blockers": []
-        },
-        {
-          "id": "ACT005",
-          "text": "Quantify PostgreSQL migration costs across infrastructure, testing, and potential downtime to resolve budget uncertainty and inform executive decisions",
-          "owner": "Diana",
-          "dueDate": null,
-          "status": "not-started",
-          "blockers": []
-        },
-        {
-          "id": "ACT006",
-          "text": "Define clear backward compatibility gates and testing protocols for Next.js 16 upgrade ensuring zero UI breaking changes",
-          "owner": "Charlie",
-          "dueDate": null,
-          "status": "not-started",
-          "blockers": []
-        }
-      ],
-      "commitments": [
-        {
-          "id": "COM001",
-          "text": "Charlie commits to ensuring zero UI breaking changes during Next.js 16 upgrade and component compatibility across all existing systems",
-          "owner": "Charlie",
-          "dueDate": "2026-03-22",
-          "status": "pending"
-        },
-        {
-          "id": "COM002",
-          "text": "Bob commits to completing comprehensive testing and rollback plan documentation before PostgreSQL migration execution by March 22 deadline",
-          "owner": "Bob",
-          "dueDate": "2026-03-22",
           "status": "pending"
         },
         {
           "id": "COM003",
-          "text": "Diana commits to managing downtime planning and client communication strategy for PostgreSQL migration with explicit service availability safeguards",
-          "owner": "Diana",
-          "dueDate": "2026-03-08",
+          "text": "Organization committed to building administrative infrastructure through documented processes, checklists, and system automation to reduce dependency on individual key persons and improve sustainability.",
+          "owner": "Danielle Alpher",
+          "dueDate": null,
           "status": "pending"
         }
       ],
       "risks": [
         {
           "id": "RISK001",
-          "text": "Aggressive timeline compression with three concurrent major initiatives (Next.js upgrade, PostgreSQL migration, architecture redesign) sharing overlapping March deadlines against explicitly acknowledged insufficient bandwidth, risking quality degradation, team burnout, and delivery failure",
+          "text": "Continued financial mismanagement and bookkeeping errors compromising organizational credibility, preventing timely 990 filing, blocking grant applications, and eroding donor trust in fundraising capacity.",
           "severity": "high",
-          "mitigation": "Implement phased initiative sequencing with clear dependency mapping to reduce concurrent execution and allocate Bob's bandwidth strategically across sequential phases with contingency buffers"
+          "mitigation": "Replace bookkeeper immediately; implement system-generated reporting; resolve reconciliation backlog; establish finance committee oversight and monthly reporting review."
         },
         {
           "id": "RISK002",
-          "text": "Data loss potential during PostgreSQL migration without robust rollback plan, comprehensive testing protocols, and clear downtime strategy, threatening user experience and revenue",
+          "text": "Director burnout and turnover due to unsustainable 30+ hour/week workload, underpaid compensation ($40/hour), and lack of administrative support; threatens institutional knowledge and strategic continuity.",
           "severity": "high",
-          "mitigation": "Develop comprehensive migration risk mitigation plan including pre-migration data snapshots, blue-green deployments or read replicas, production-like environment testing, explicit monitoring/alerting, and documented rollback procedures"
+          "mitigation": "Increase Director salary to sustainable level; hire qualified administrative support; delegate transactional work; establish clear role boundaries and decision authority."
         },
         {
           "id": "RISK003",
-          "text": "Client churn risk from deferring real-time collaboration features to Q2 as competitors may offer these capabilities, potentially causing deal losses with quantifiable but currently unquantified revenue impact",
-          "severity": "high",
-          "mitigation": "Implement proactive client communication strategy positioning Q1 technical investments as strategic quality enhancements, create account-specific messaging for affected clients, and establish weekly sales-product sync for early identification of at-risk accounts"
+          "text": "Legal and compliance risks from lack of formal policies, documented decision-making, and performance management procedures; potential labor law violations and audit exposure.",
+          "severity": "medium",
+          "mitigation": "Create formal job descriptions and performance review schedule; document personnel decisions with finance committee consultation; establish written organizational policies."
         },
         {
           "id": "RISK004",
-          "text": "Backward compatibility issues with existing components during Next.js 16 upgrade causing regressions and component incompatibility despite Charlie's zero breaking changes commitment",
-          "severity": "medium",
-          "mitigation": "Define clear backward compatibility gates, establish component regression testing suite, create explicit approval criteria for component changes, and document which components upgrade versus remain on previous version"
-        },
-        {
-          "id": "RISK005",
-          "text": "Single point of technical execution bottleneck with Bob's limited bandwidth required across Next.js upgrade, PostgreSQL migration, and architecture design, limiting parallelization and increasing dependency risk",
-          "severity": "medium",
-          "mitigation": "Create comprehensive documentation and knowledge transfer program to distribute technical ownership beyond Bob and establish runbooks for future deployments enabling team scaling and reduced individual contributor dependency"
+          "text": "Loss of organizational knowledge and operational paralysis if key individuals depart without succession planning or institutional documentation; threatens long-term 50-year sustainability goals.",
+          "severity": "high",
+          "mitigation": "Develop succession plans for critical roles; create knowledge transfer and documentation systems; build administrative infrastructure reducing dependency on key persons."
         }
       ]
     }

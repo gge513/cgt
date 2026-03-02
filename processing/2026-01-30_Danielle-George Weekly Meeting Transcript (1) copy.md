@@ -1,6 +1,6 @@
 ---
 date: 2026-01-30
-concepts: fundraising campaign, campus master plan, architectural study, board governance, financial management, nonprofit operations, strategic planning, community engagement, property renovation, personal finance philosophy
+concepts: campus master plan, fundraising campaign, architectural study, board governance, financial management, nonprofit operations, facility renovation, planning committee, donor engagement, consumerism and minimalism
 ---
 
 # Meeting Transcript

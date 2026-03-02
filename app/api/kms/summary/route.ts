@@ -9,6 +9,8 @@
  * Type-safe: Uses proper KMS types from src/types.ts
  */
 
+export const runtime = 'nodejs';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { validateAuth } from '@/lib/auth';
 import { cacheGet, cacheSet } from '@/lib/cache';
