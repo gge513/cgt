@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(/tmp/phase1_summary.txt:*)",
+      "Bash(npm test:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm ls:*)",
+      "Bash(rm:*)",
+      "Bash(done)",
+      "Bash(gh auth:*)",
+      "Bash(ls:*)",
+      "Bash(/tmp/prevention_strategy_summary.txt:*)",
+      "WebSearch",
+      "Bash(curl:*)",
+      "Bash(\"/Users/georgeeastwood/AI Projects/Transcript To Strategy/transcript-analyzer-unified/input/test-strategy-meeting.txt\":*)",
+      "Bash(then:*)",
+      "Bash(\"/Users/georgeeastwood/AI Projects/Transcript To Strategy/transcript-analyzer-unified/.processed_kms_inferred.json\":*)",
+      "Bash(echo Relationships for decision $DECISION::*)"
+    ]
+  }
+}
