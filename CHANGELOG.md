@@ -2,6 +2,39 @@
 
 All notable changes to the Unified Transcript Analyzer project are documented here.
 
+## [1.1.0] - 2026-03-02 - Production Ready with KMS
+
+### 🎉 Phase 7: Knowledge Management System & Critical Fixes
+
+**Knowledge Management System:**
+- ✅ Automatic extraction of decisions, action items, commitments, risks from analysis reports
+- ✅ Persistent JSON storage (`.processed_kms.json`) for cross-meeting queries
+- ✅ Rich query interface: `npm run kms -- [filters]`
+- ✅ Support for filtering by type, owner, status, severity, keyword, due date
+- ✅ Real-time integration into analysis pipeline
+
+**Critical Fixes & Upgrades:**
+- ✅ **Fixed CLI command routing** - src/cli.ts lines 80-99 were scaffolding, now properly wired to orchestration functions
+- ✅ **Upgraded @anthropic-ai/sdk** - v0.13.1 → v0.78.0 (restored API compatibility)
+- ✅ **Verified production readiness** - All 79 tests passing with real transcript processing
+- ✅ **Complete solution documentation** - Comprehensive guides in docs/solutions/
+
+**New Files & Modules:**
+- `src/kms/extractor.ts` (189 lines) - Claude-powered KMS data extraction
+- `src/kms/store.ts` (207 lines) - Persistent KMS storage and querying
+- `src/kms/query.ts` (279 lines) - CLI interface for KMS queries
+- `src/kms/index.ts` - Module exports
+- `src/kms-query.ts` (78 lines) - Entry point for `npm run kms` command
+- `KMS.md` (453 lines) - Complete KMS user guide with examples
+- `docs/solutions/integration-issues/cli-wiring-and-sdk-dependency-upgrade.md` - Detailed solution documentation
+
+**Updated Documentation:**
+- README.md - Added documentation section with navigation
+- CLAUDE.md - Extended with KMS integration points
+- CHANGELOG.md - Complete Phase 7 documentation
+
+---
+
 ## [1.0.0] - 2026-03-02 - Project Complete
 
 ### 🎉 Major Milestone: All Phases Complete (1-6)
