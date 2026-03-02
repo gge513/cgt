@@ -21,6 +21,7 @@ export interface ConversionStats {
   successful: number;
   failed: number;
   errors: string[];
+  exitCode: 0 | 1 | 2; // 0: success, 1: partial, 2: failure
 }
 
 /**
@@ -50,7 +51,7 @@ function getRelativeFolderPath(filePath: string, inputDir: string): string {
 }
 
 /**
- * Convert a single transcript file
+ * Convert a single transcript file with detailed error handling
  */
 async function convertSingleFile(
   inputFile: string,
@@ -58,57 +59,84 @@ async function convertSingleFile(
   manifestManager: ManifestManager,
   manifest: Manifest
 ): Promise<{ success: boolean; error?: string }> {
+  const fileName = path.basename(inputFile);
+
   try {
-    logger.info(`Processing ${path.basename(inputFile)}...`);
+    logger.info(`Processing ${fileName}...`);
 
-    // Read file content
-    const content = fs.readFileSync(inputFile, "utf-8");
+    // Stage 1: Read file with proper encoding error handling
+    let content: string;
+    try {
+      content = fs.readFileSync(inputFile, "utf-8");
+      logger.debug(`Read ${content.length} characters from ${fileName}`);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes("ENOENT")) {
+        logger.error(`File not found: ${fileName}`);
+        return { success: false, error: "File not found" };
+      } else if (msg.includes("EACCES")) {
+        logger.error(`Permission denied reading: ${fileName}`);
+        return { success: false, error: "Permission denied" };
+      }
+      throw error;
+    }
 
-    // Extract metadata (API call)
+    if (content.length === 0) {
+      logger.warn(`File is empty: ${fileName}`);
+      return { success: false, error: "File is empty" };
+    }
+
+    // Stage 2: Extract metadata (with fallback for API failures)
+    logger.debug(`Extracting metadata from ${fileName}...`);
     const metadata = await extractMetadata(content);
 
-    // Create markdown content
+    // Stage 3: Create markdown content
     const markdownContent = createMarkdownContent(content, metadata);
 
-    // Generate output filename with date prefix
-    const outputFileName = generateOutputFilename(path.basename(inputFile), metadata.date);
+    // Stage 4: Generate output filename
+    const outputFileName = generateOutputFilename(fileName, metadata.date);
 
-    // Create output file path (preserve folder structure)
-    const relativeFolderPath = getRelativeFolderPath(inputFile, path.dirname(inputFile).replace(/\/[^/]*$/, ""));
-    let outputFile = path.join(processingDir, outputFileName);
+    // Stage 5: Create output directory and write file
+    try {
+      const relativeFolderPath = getRelativeFolderPath(inputFile, path.dirname(inputFile).replace(/\/[^/]*$/, ""));
+      let outputFile = path.join(processingDir, outputFileName);
 
-    if (relativeFolderPath) {
-      const folderDir = path.join(processingDir, relativeFolderPath);
-      ensureDirectoryExists(folderDir);
-      outputFile = path.join(folderDir, outputFileName);
+      if (relativeFolderPath) {
+        const folderDir = path.join(processingDir, relativeFolderPath);
+        const dirCheck = ensureDirectoryExists(folderDir);
+        if (!dirCheck.valid) {
+          logger.error(`Could not create directory: ${dirCheck.error}`);
+          return { success: false, error: `Directory creation failed: ${dirCheck.error}` };
+        }
+        outputFile = path.join(folderDir, outputFileName);
+      }
+
+      fs.writeFileSync(outputFile, markdownContent, "utf-8");
+      logger.info(`✓ Converted: ${fileName} → ${outputFileName}`);
+      if (metadata.concepts.length > 0) {
+        logger.debug(`  Concepts: ${metadata.concepts.join(", ")}`);
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes("EACCES")) {
+        logger.error(`Permission denied writing to output directory: ${msg}`);
+        return { success: false, error: "Permission denied writing to output" };
+      }
+      throw error;
     }
 
-    // Write markdown file
-    fs.writeFileSync(outputFile, markdownContent, "utf-8");
-    logger.info(`✓ Converted: ${path.basename(inputFile)} → ${outputFileName}`);
-    if (metadata.concepts.length > 0) {
-      logger.debug(`  Concepts: ${metadata.concepts.join(", ")}`);
-    }
-
-    // Compute file hash for manifest
+    // Stage 6: Compute file hash and record in manifest
     const fileHash = manifestManager.computeFileHash(inputFile);
     if (!fileHash) {
-      logger.warn(`Could not compute hash for ${path.basename(inputFile)}, skipping manifest update`);
+      logger.warn(`Could not compute hash for ${fileName}, skipping manifest update`);
       return { success: false, error: "Could not compute file hash" };
     }
 
-    // Record in manifest
-    manifestManager.recordConversion(
-      manifest,
-      path.basename(inputFile),
-      outputFileName,
-      fileHash
-    );
-
+    manifestManager.recordConversion(manifest, fileName, outputFileName, fileHash);
     return { success: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    logger.error(`Error converting ${path.basename(inputFile)}: ${message}`);
+    logger.error(`Error converting ${fileName}: ${message}`);
     return { success: false, error: message };
   }
 }
@@ -129,6 +157,7 @@ export async function convertTranscripts(
     successful: 0,
     failed: 0,
     errors: [],
+    exitCode: 0,
   };
 
   try {
@@ -207,11 +236,26 @@ export async function convertTranscripts(
     logger.info(`Conversion complete: ${stats.successful}/${stats.new_files} files processed`);
     logger.info(`Total in manifest: ${manifest.processed_files.length} files`);
 
+    // Set exit code based on results
+    if (stats.successful === stats.new_files || stats.new_files === 0) {
+      stats.exitCode = 0; // All successful or nothing to process
+    } else if (stats.successful > 0) {
+      stats.exitCode = 1; // Partial success
+    } else {
+      stats.exitCode = 2; // All failed
+    }
+
+    if (stats.errors.length > 0) {
+      logger.warn(`Errors encountered during conversion:`);
+      stats.errors.forEach((err) => logger.warn(`  - ${err}`));
+    }
+
     return stats;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logger.error(`Unexpected error during conversion: ${message}`);
     stats.errors.push(`Unexpected error: ${message}`);
+    stats.exitCode = 2;
     return stats;
   }
 }

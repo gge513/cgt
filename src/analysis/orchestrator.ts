@@ -136,6 +136,7 @@ export async function analyzeConvertedFiles(
   errors: string[];
   reportFiles: string[];
   manifest: Manifest;
+  exitCode: 0 | 1 | 2;
 }> {
   let markdownFiles: string[] = [];
   const force = options.force || options.forceAnalyze || false;
@@ -148,6 +149,7 @@ export async function analyzeConvertedFiles(
     errors: [] as string[],
     reportFiles: [] as string[],
     manifest,
+    exitCode: 0 as 0 | 1 | 2,
   };
 
   try {
@@ -183,6 +185,7 @@ export async function analyzeConvertedFiles(
 
     if (filesToAnalyze.length === 0) {
       logger.info("All files have cached analyses");
+      stats.exitCode = 0;
       return stats;
     }
 
@@ -233,12 +236,27 @@ export async function analyzeConvertedFiles(
     // Save manifest with updated analysis cache
     manifestManager.saveManifest(manifest);
 
+    // Set exit code based on results
+    if (stats.analyzed > 0 && stats.failed === 0) {
+      stats.exitCode = 0; // All successful
+    } else if (stats.analyzed > 0) {
+      stats.exitCode = 1; // Partial success
+    } else {
+      stats.exitCode = 2; // All failed
+    }
+
+    if (stats.errors.length > 0) {
+      logger.warn(`Errors encountered during analysis:`);
+      stats.errors.forEach((err) => logger.warn(`  - ${err}`));
+    }
+
     return stats;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logger.error(`Analysis failed: ${message}`);
     stats.errors.push(`Analysis error: ${message}`);
     stats.failed = markdownFiles?.length || 0;
+    stats.exitCode = 2;
     return stats;
   }
 }

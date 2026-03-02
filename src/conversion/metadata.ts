@@ -8,8 +8,9 @@ import { TranscriptMetadata } from "../types";
 import { getLogger } from "../utils/logging";
 
 const logger = getLogger();
-const MAX_RETRIES = 2;
+const MAX_RETRIES = 3;
 const MAX_TRUNCATE_LENGTH = 12000;
+const RETRY_DELAY_MS = 1000; // Exponential backoff starting at 1 second
 
 /**
  * Extract JSON from Claude response
@@ -95,6 +96,7 @@ ${transcriptContent}`,
     if (!responseText || !responseText.trim()) {
       if (retryCount < MAX_RETRIES) {
         logger.debug(`Empty response, retrying... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        await delay(RETRY_DELAY_MS * Math.pow(2, retryCount)); // Exponential backoff
         return extractMetadata(content, retryCount + 1);
       }
       logger.warn("API returned empty response after retries");
@@ -115,9 +117,21 @@ ${transcriptContent}`,
     return { date, concepts };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const isTimeoutError =
+      errorMessage.includes("timeout") ||
+      errorMessage.includes("ETIMEDOUT") ||
+      errorMessage.includes("ECONNRESET");
+    const isRateLimitError =
+      errorMessage.includes("429") ||
+      errorMessage.includes("rate limit") ||
+      errorMessage.includes("too many requests");
 
-    if (retryCount < MAX_RETRIES) {
-      logger.debug(`Error extracting metadata, retrying... (attempt ${retryCount + 1}/${MAX_RETRIES}): ${errorMessage}`);
+    if (retryCount < MAX_RETRIES && (isTimeoutError || isRateLimitError)) {
+      const delayMs = RETRY_DELAY_MS * Math.pow(2, retryCount);
+      logger.warn(
+        `${isRateLimitError ? "Rate limited" : "API timeout"}, retrying in ${delayMs}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`
+      );
+      await delay(delayMs);
       return extractMetadata(content, retryCount + 1);
     }
 
@@ -158,4 +172,11 @@ export function generateOutputFilename(inputFileName: string, date: string): str
   }
 
   return `${fileBase}.md`;
+}
+
+/**
+ * Helper function to delay execution (for retry backoff)
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
