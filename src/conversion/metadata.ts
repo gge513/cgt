@@ -6,6 +6,7 @@
 import { getClient, getModel } from "../utils/client";
 import { TranscriptMetadata } from "../types";
 import { getLogger } from "../utils/logging";
+import { sanitizeTranscriptContent } from "../utils/parsing";
 
 const logger = getLogger();
 const MAX_RETRIES = 3;
@@ -84,7 +85,7 @@ Respond ONLY in this exact JSON format, no other text:
 }
 
 TRANSCRIPT:
-${transcriptContent}`,
+${sanitizeTranscriptContent(transcriptContent)}`,
         },
       ],
     });
@@ -105,13 +106,22 @@ ${transcriptContent}`,
 
     // Parse JSON from response
     const metadata = extractJsonFromResponse(responseText);
-    const date = metadata.date || "Unknown";
-    let concepts: string[] = metadata.concepts || [];
 
-    // Validate concepts is an array
+    // Validate date format
+    let date = metadata.date || "Unknown";
+    if (date !== "Unknown" && !/^\d{4}-\d{2}-\d{2}$/.test(String(date))) {
+      date = "Unknown";
+    }
+
+    // Validate and sanitize concepts
+    let concepts: string[] = metadata.concepts || [];
     if (!Array.isArray(concepts)) {
       concepts = [];
     }
+    concepts = concepts
+      .filter((c) => typeof c === "string" && c.length > 0)
+      .map((c) => c.substring(0, 100)) // Max 100 chars per concept
+      .slice(0, 20); // Max 20 concepts
 
     logger.debug(`Extracted metadata: date=${date}, concepts=[${concepts.join(", ")}]`);
     return { date, concepts };

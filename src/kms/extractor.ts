@@ -12,6 +12,13 @@ import {
   KMSCommitment,
   KMSRisk,
 } from "../types";
+import {
+  sanitizeTranscriptContent,
+  validateKMSDecision,
+  validateKMSActionItem,
+  validateKMSCommitment,
+  validateKMSRisk,
+} from "../utils/parsing";
 
 const logger = getLogger();
 
@@ -70,7 +77,7 @@ Extract and return ONLY valid JSON with these exact fields:
 }
 
 ANALYSIS REPORT:
-${analysisReport}
+${sanitizeTranscriptContent(analysisReport)}
 
 Requirements:
 - Extract 3-5 key decisions with clear ownership
@@ -125,6 +132,7 @@ Requirements:
 
 /**
  * Parse KMS response from Claude
+ * Validates all items against schema to prevent injection attacks
  */
 function parseKMSResponse(text: string): {
   decisions: KMSDecision[];
@@ -134,24 +142,54 @@ function parseKMSResponse(text: string): {
 } {
   try {
     // Try direct parsing
-    const data = JSON.parse(text);
+    let data = JSON.parse(text);
+
+    // Validate and filter all items
+    const validatedDecisions = (data.decisions || [])
+      .map(validateKMSDecision)
+      .filter((d: any) => d !== null) as KMSDecision[];
+    const validatedActions = (data.actionItems || [])
+      .map(validateKMSActionItem)
+      .filter((a: any) => a !== null) as KMSActionItem[];
+    const validatedCommitments = (data.commitments || [])
+      .map(validateKMSCommitment)
+      .filter((c: any) => c !== null) as KMSCommitment[];
+    const validatedRisks = (data.risks || [])
+      .map(validateKMSRisk)
+      .filter((r: any) => r !== null) as KMSRisk[];
+
     return {
-      decisions: data.decisions || [],
-      actionItems: data.actionItems || [],
-      commitments: data.commitments || [],
-      risks: data.risks || [],
+      decisions: validatedDecisions,
+      actionItems: validatedActions,
+      commitments: validatedCommitments,
+      risks: validatedRisks,
     };
   } catch {
     // Try extracting JSON from markdown code blocks
     const blockMatch = text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
     if (blockMatch) {
       try {
-        const data = JSON.parse(blockMatch[1]);
+        let data = JSON.parse(blockMatch[1]);
+
+        // Validate and filter all items
+        const validatedDecisions = (data.decisions || [])
+          .map(validateKMSDecision)
+          .filter((d: any) => d !== null) as KMSDecision[];
+        const validatedActions = (data.actionItems || [])
+          .map(validateKMSActionItem)
+          .filter((a: any) => a !== null) as KMSActionItem[];
+        const validatedCommitments = (data.commitments || [])
+          .map(validateKMSCommitment)
+          .filter((c: any) => c !== null) as KMSCommitment[];
+        const validatedRisks = (data.risks || [])
+          .map(validateKMSRisk)
+          .filter((r: any) => r !== null) as KMSRisk[];
+
         return {
-          decisions: data.decisions || [],
-          actionItems: data.actionItems || [],
-          commitments: data.commitments || [],
-          risks: data.risks || [],
+          decisions: validatedDecisions,
+          actionItems: validatedActions,
+          commitments: validatedCommitments,
+          risks: validatedRisks,
         };
       } catch {
         // Continue

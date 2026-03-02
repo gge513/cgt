@@ -13,6 +13,7 @@ import {
   KMSRisk,
   InferredRelationship,
 } from "../types";
+import { sanitizeStructuredData } from "../utils/parsing";
 
 const logger = getLogger();
 
@@ -53,16 +54,16 @@ function buildInferencePrompt(data: InferencePromptData): string {
   const prompt = `You are an expert business analyst. Analyze the following decisions, actions, commitments, and risks from multiple meetings and identify relationships between them.
 
 ## Decisions:
-${data.decisions.map((d) => `- [${d.id}] ${d.text} (Meeting: ${d.meetingName})`).join("\n")}
+${data.decisions.map((d) => `- [${d.id}] ${sanitizeStructuredData(d.text)} (Meeting: ${d.meetingName})`).join("\n")}
 
 ## Actions:
-${data.actions.map((a) => `- [${a.id}] ${a.text} (Meeting: ${a.meetingName})`).join("\n")}
+${data.actions.map((a) => `- [${a.id}] ${sanitizeStructuredData(a.text)} (Meeting: ${a.meetingName})`).join("\n")}
 
 ## Commitments:
-${data.commitments.map((c) => `- [${c.id}] ${c.text} (Meeting: ${c.meetingName})`).join("\n")}
+${data.commitments.map((c) => `- [${c.id}] ${sanitizeStructuredData(c.text)} (Meeting: ${c.meetingName})`).join("\n")}
 
 ## Risks:
-${data.risks.map((r) => `- [${r.id}] ${r.text} (Meeting: ${r.meetingName})`).join("\n")}
+${data.risks.map((r) => `- [${r.id}] ${sanitizeStructuredData(r.text)} (Meeting: ${r.meetingName})`).join("\n")}
 
 For each relationship you identify, provide a JSON object with:
 - fromId: ID of the source item
@@ -137,30 +138,72 @@ function parseInferenceResponse(
       return [];
     }
 
-    return parsed.map((rel, idx) => {
-      const fromItem = itemMap.get(rel.fromId);
-      const toItem = itemMap.get(rel.toId);
+    // Allowlist of valid types and relationship types
+    const validTypes = new Set(["decision", "action", "commitment", "risk"]);
+    const validRelationshipTypes = new Set([
+      "blocks",
+      "impacts",
+      "depends_on",
+      "related_to",
+    ]);
 
-      if (!fromItem || !toItem) {
-        logger.debug(`Skipping relationship with missing items: ${rel.fromId} -> ${rel.toId}`);
-        return null;
-      }
+    return parsed
+      .map((rel, idx) => {
+        // Validate type fields
+        if (
+          typeof rel.fromId !== "string" ||
+          typeof rel.toId !== "string" ||
+          typeof rel.fromType !== "string" ||
+          typeof rel.toType !== "string" ||
+          typeof rel.relationshipType !== "string" ||
+          typeof rel.description !== "string" ||
+          typeof rel.reasoningBrief !== "string"
+        ) {
+          logger.debug(`Skipping relationship with invalid field types`);
+          return null;
+        }
 
-      return {
-        id: `rel_${Date.now()}_${idx}`,
-        fromId: rel.fromId,
-        fromType: rel.fromType,
-        toId: rel.toId,
-        toType: rel.toType,
-        relationshipType: rel.relationshipType,
-        description: rel.description,
-        confidence: Math.min(1, Math.max(0, rel.confidence || 0.5)),
-        reasoningBrief: rel.reasoningBrief,
-        fromMeeting: fromItem.meeting,
-        toMeeting: toItem.meeting,
-        inferredAt: new Date().toISOString(),
-      };
-    }).filter((rel): rel is InferredRelationship => rel !== null);
+        // Validate against allowlists
+        if (!validTypes.has(rel.fromType) || !validTypes.has(rel.toType)) {
+          logger.debug(
+            `Skipping relationship with invalid type: ${rel.fromType} -> ${rel.toType}`
+          );
+          return null;
+        }
+
+        if (!validRelationshipTypes.has(rel.relationshipType)) {
+          logger.debug(
+            `Skipping relationship with invalid relationshipType: ${rel.relationshipType}`
+          );
+          return null;
+        }
+
+        const fromItem = itemMap.get(rel.fromId);
+        const toItem = itemMap.get(rel.toId);
+
+        if (!fromItem || !toItem) {
+          logger.debug(
+            `Skipping relationship with missing items: ${rel.fromId} -> ${rel.toId}`
+          );
+          return null;
+        }
+
+        return {
+          id: `rel_${Date.now()}_${idx}`,
+          fromId: rel.fromId.substring(0, 50),
+          fromType: rel.fromType,
+          toId: rel.toId.substring(0, 50),
+          toType: rel.toType,
+          relationshipType: rel.relationshipType,
+          description: rel.description.substring(0, 500),
+          confidence: Math.min(1, Math.max(0, rel.confidence || 0.5)),
+          reasoningBrief: rel.reasoningBrief.substring(0, 200),
+          fromMeeting: fromItem.meeting,
+          toMeeting: toItem.meeting,
+          inferredAt: new Date().toISOString(),
+        };
+      })
+      .filter((rel): rel is InferredRelationship => rel !== null);
   } catch (error) {
     logger.error(
       `Error parsing inference response: ${
