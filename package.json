@@ -4,18 +4,20 @@
   "description": "Unified transcript converter and analyzer system with multi-agent AI analysis",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "ts-node src/cli.ts analyze",
+    "dev": "next dev",
+    "dev:cli": "ts-node src/cli.ts analyze",
     "analyze": "ts-node src/cli.ts analyze",
     "convert": "ts-node src/cli.ts convert",
     "analyze-existing": "ts-node src/cli.ts analyze-existing",
     "kms": "ts-node src/kms-query.ts",
-    "build": "tsc",
-    "start": "node dist/cli.js analyze",
+    "build": "next build && tsc",
+    "build:cli": "tsc",
+    "start": "next start",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "tsc --noEmit",
-    "clean": "rm -rf dist/"
+    "clean": "rm -rf dist/ .next/"
   },
   "keywords": [
     "transcript",
@@ -28,12 +30,22 @@
   "license": "ISC",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
+    "@tanstack/react-query": "^5.90.21",
+    "@tanstack/react-table": "^8.21.3",
+    "class-variance-authority": "^0.7.1",
     "dotenv": "^16.0.0",
-    "glob": "^10.3.0"
+    "glob": "^10.3.0",
+    "next": "^16.1.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "recharts": "^3.7.0",
+    "tailwindcss": "^4.2.1",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "@types/node": "^20.0.0",
+    "@types/react": "19.2.14",
     "jest": "^29.5.0",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.0",
