@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
+import { validateAuth } from '@/lib/auth';
 
 const INFERRED_PATH = '.processed_kms_inferred.json';
 
 export async function GET(request: NextRequest) {
+  // Validate authentication first
+  const authResult = validateAuth(request);
+  if (!authResult.authenticated) {
+    return NextResponse.json(
+      { error: 'Unauthorized', details: authResult.error },
+      { status: 401 }
+    );
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const decisionId = searchParams.get('decisionId');

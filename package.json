@@ -36,6 +36,7 @@
     "dotenv": "^16.0.0",
     "dspy.ts": "^2.1.1",
     "glob": "^10.3.0",
+    "jsonwebtoken": "^9.0.0",
     "next": "^16.1.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -45,6 +46,7 @@
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
+    "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.0.0",
     "@types/react": "19.2.14",
     "jest": "^29.5.0",

@@ -1,8 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
+import { validateAuth } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Validate authentication first
+  const authResult = validateAuth(request);
+  if (!authResult.authenticated) {
+    return NextResponse.json(
+      { error: 'Unauthorized', details: authResult.error },
+      { status: 401 }
+    );
+  }
+
   try {
     const kmsPath = path.join(process.cwd(), '.processed_kms.json');
 

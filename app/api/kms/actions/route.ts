@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
+import { validateAuth } from '@/lib/auth';
 
 interface ActionRecord {
   decisionId: string;
@@ -99,6 +100,15 @@ function applyActionToKMS(decisionId: string, action: string): void {
 }
 
 export async function POST(request: NextRequest) {
+  // Validate authentication first
+  const authResult = validateAuth(request);
+  if (!authResult.authenticated) {
+    return NextResponse.json(
+      { error: 'Unauthorized', details: authResult.error },
+      { status: 401 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { decisionId, action } = body;
@@ -149,7 +159,16 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Validate authentication first
+  const authResult = validateAuth(request);
+  if (!authResult.authenticated) {
+    return NextResponse.json(
+      { error: 'Unauthorized', details: authResult.error },
+      { status: 401 }
+    );
+  }
+
   try {
     const store = loadActions();
 

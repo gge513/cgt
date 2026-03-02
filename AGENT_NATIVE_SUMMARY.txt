@@ -1,0 +1,352 @@
+================================================================================
+AGENT-NATIVE ARCHITECTURE REVIEW - EXECUTIVE SUMMARY
+Transcript Analyzer Unified - March 2, 2026
+================================================================================
+
+VERDICT: 74% Agent-Native (Good foundation, 3 critical gaps blocking full autonomy)
+
+================================================================================
+QUICK STATUS
+================================================================================
+
+WHAT WORKS (✅):
+- CLI commands are fully non-interactive and automatable
+- KMS data queryable via REST API and CLI with powerful filtering
+- Shared workspace architecture (no agent sandbox)
+- Manifest-based state tracking (offline-capable)
+- Error recovery in batch processing
+
+WHAT'S BROKEN (❌):
+- No API to upload transcripts (agents must use bash)
+- No API to trigger analysis (agents must subprocess npm)
+- No system state inspection (agents must parse JSON manually)
+- Incomplete KMS API filtering (actions vs decisions inconsistent)
+- Web UI features partly isolated from API
+
+CRITICAL GAPS (3):
+1. File Upload: No POST /api/kms/transcripts endpoint
+2. Analysis Trigger: Analysis functions not REST-exposed
+3. State Inspection: No GET /api/analysis/state endpoint
+
+================================================================================
+CAPABILITY SCORECARD
+================================================================================
+
+Dimension                 | Score     | Status
+--------------------------|-----------|----------
+Action Parity             | 6/8 (75%) | Missing: file upload, analysis API
+Context Parity            | 2/5 (40%) | No context injection
+Shared Workspace          | 5/5 (100%)| Perfect: no isolation
+Tool Primitives           | 4/5 (80%) | Mostly primitives
+Error Transparency        | 3/5 (60%) | CLI exit codes, API errors
+State Queryability        | 3/5 (60%) | Manual JSON reads needed
+API Completeness          | 4/7 (57%) | Reads ✓, Writes ✗
+Testing                   | 5/5 (100%)| 79 tests passing
+
+OVERALL: 32/43 = 74% Agent-Native
+
+================================================================================
+CAPABILITY MATRIX
+================================================================================
+
+User Can...                 | Agent Can...           | Status
+---------------------------|------------------------|----------
+Add transcripts             | Use bash (workaround)  | ❌ No API
+Run analysis               | Use npm subprocess     | ⚠️ Works but not ideal
+View KMS summary           | GET /api/kms/summary   | ✅ Full API
+Filter decisions           | GET /api/kms/decisions?*| ✅ Full API
+Query by keyword           | CLI: npm run kms -k    | ⚠️ CLI only
+Validate relationships     | POST /api/kms/validate | ✅ Full API
+Mark decision escalated    | POST /api/kms/actions  | ✅ Full API
+View decision detail       | Drill-down in web UI   | ❌ No /decisions/{id} API
+Filter action items       | UI filters only        | ⚠️ Incomplete API
+Check system readiness    | Manual: cat .processed_manifest.json | ❌ No API
+
+================================================================================
+CRITICAL GAPS EXPLAINED
+================================================================================
+
+GAP 1: FILE UPLOAD
+=================
+Problem: Agent cannot programmatically add transcripts
+Current: Agent must use bash: cp /tmp/meeting.txt input/
+Needed: POST /api/kms/transcripts { filename, content }
+Impact: Blocks autonomous operation (agent can't source transcripts)
+Fix Time: 2-3 hours
+After Fix: Agent can upload transcripts and trigger analysis without bash
+
+GAP 2: ANALYSIS TRIGGER
+======================
+Problem: Analysis functions not API-exposed, only CLI accessible
+Current: Agent must exec("npm run analyze") and parse exit codes
+Needed: POST /api/analysis/analyze { forceReprocess?: boolean }
+Impact: Indirect error handling, no progress visibility
+Fix Time: 3-4 hours
+After Fix: Structured API response with stats and timing
+
+GAP 3: STATE INSPECTION
+======================
+Problem: Agent cannot check readiness before operating
+Current: Agent must bash: cat .processed_manifest.json | jq .
+Needed: GET /api/analysis/state returns file counts, API config, cache stats
+Impact: Blind operation (doesn't know if system is ready)
+Fix Time: 1-2 hours
+After Fix: Agent knows readiness, file counts, model, cache state
+
+================================================================================
+RECOMMENDED ACTION PLAN
+================================================================================
+
+PHASE 1 (1-1.5 Days): P0 - Critical Gaps
+  1. Add POST /api/kms/transcripts (file upload) - 3 hours
+  2. Add POST /api/analysis/analyze (analysis trigger) - 4 hours
+  3. Add GET /api/analysis/state (state inspection) - 2 hours
+  4. Write tests and integration test - 3 hours
+  Total: ~12 hours = 1.5 days
+
+  RESULT: System becomes 90%+ agent-native
+
+PHASE 2 (1 Day): P1 - High Value Improvements
+  1. Complete /api/kms/actions filtering (owner, status, due) - 1 hour
+  2. Add /api/kms/{decisions,actions,risks,commitments}/{id} - 3 hours
+  3. Add /api/kms/search?q=keyword endpoint - 1 hour
+
+  RESULT: Web UI features fully API-accessible
+
+PHASE 3 (Optional): P2 - Nice-to-Have
+  1. Add /api/analysis/files endpoints (list, upload, delete)
+  2. Add /api/agent/context endpoint (dynamic system prompt injection)
+  3. Comprehensive API test suite
+
+================================================================================
+WHAT'S WORKING WELL
+================================================================================
+
+1. CLI Design
+   ✅ Non-interactive (fully automatable)
+   ✅ Clear single-responsibility commands
+   ✅ Comprehensive help and error messages
+   ✅ Powerful KMS query tool (npm run kms)
+
+2. Manifest-Based State
+   ✅ Offline operation (no external DB)
+   ✅ Per-model result caching
+   ✅ Hash-based change detection
+   ✅ Atomic updates (temp → rename)
+
+3. Shared Workspace
+   ✅ User and agent both use input/, processing/, output/
+   ✅ No sandbox isolation
+   ✅ Transparent file inspection possible
+
+4. Error Recovery
+   ✅ Single file failure doesn't halt batch processing
+   ✅ Statistics tracked per file
+   ✅ Continues with next file
+
+5. Testing
+   ✅ 79 tests passing (100% pass rate)
+   ✅ Multi-suite: integration, manifest, metadata, validation
+   ✅ Good edge case coverage
+
+================================================================================
+IMMEDIATE BLOCKERS
+================================================================================
+
+If you want agents to operate AUTONOMOUSLY today:
+- ❌ Cannot upload transcripts without bash
+- ❌ Cannot trigger analysis without subprocess npm
+- ❌ Cannot verify system readiness programmatically
+- ❌ Must fall back to manual bash commands
+
+If you want agents with MEDIUM autonomy:
+- ✅ Can query all KMS data (GET endpoints complete)
+- ✅ Can validate relationships (POST endpoints working)
+- ✅ Can process uploaded files (analysis works)
+- ❌ Still cannot source new transcripts
+
+================================================================================
+AGENT WORKFLOWS SUPPORTED
+================================================================================
+
+SUPPORTED (Agent can do):
+✅ Given existing files: Analyze and extract insights
+✅ Query decisions/actions/risks by status, owner, severity
+✅ Search KMS by keyword
+✅ Validate AI-inferred decision relationships
+✅ Mark decisions as escalated/resolved/high-priority
+✅ Get comprehensive KMS summary statistics
+
+NOT YET SUPPORTED (Agent cannot do):
+❌ Upload a transcript file
+❌ Trigger analysis without subprocess
+❌ Check if system is ready before operating
+❌ List files ready to process
+❌ Manage transcript files (delete, move)
+❌ Get single decision with full details and relationships
+
+================================================================================
+ARCHITECTURE STRENGTHS
+================================================================================
+
+1. Non-Interactive CLI
+   - No prompts, fully scriptable
+   - Clear semantics: convert vs analyze vs analyze-existing
+   - Powerful query language for KMS
+
+2. Manifest Pattern
+   - Single source of truth: .processed_manifest.json
+   - Per-model caching (Haiku vs Opus separate)
+   - Atomic writes prevent corruption
+
+3. Specialist Agents
+   - Separation of concerns (synthesizer, strategist, impact analyst)
+   - Focused prompts = better outputs
+   - Composable analysis results
+
+4. Error Handling
+   - Graceful degradation per file
+   - Detailed logging at boundaries
+   - Clear failure modes
+
+================================================================================
+ARCHITECTURE WEAKNESSES
+================================================================================
+
+1. Headless Workflow (CLI-only)
+   - Analysis only accessible via subprocess
+   - No structured API for orchestration
+   - Progress not visible to agent
+
+2. File Operations Manual
+   - No upload API (agents must bash cp)
+   - No file listing API
+   - No file deletion API
+   - No file move/organize API
+
+3. State Inspection Manual
+   - Manifest must be JSON-parsed manually
+   - No API to check file counts
+   - No API to check API key configuration
+   - No API to view cache statistics
+
+4. UI-API Mismatch
+   - Drill-down detail not in API
+   - Keyword search only in CLI
+   - Single-item endpoints missing
+
+================================================================================
+FILES TO REVIEW
+================================================================================
+
+Review Documents Created:
+1. AGENT_NATIVE_REVIEW.md (this review, detailed findings)
+2. AGENT_NATIVE_FIX_GUIDE.md (step-by-step implementation)
+3. AGENT_NATIVE_SUMMARY.txt (this file, quick reference)
+
+Key Source Files:
+- /src/cli.ts (entry point, non-interactive ✓)
+- /app/api/kms/summary/route.ts (example complete API)
+- /app/api/kms/decisions/route.ts (example complete API)
+- /src/conversion/converter.ts (conversion orchestration)
+- /src/analysis/orchestrator.ts (analysis orchestration)
+- /src/kms-query.ts (CLI query tool)
+
+Missing/Incomplete:
+- /app/api/kms/transcripts/route.ts (NEEDED)
+- /app/api/analysis/analyze/route.ts (NEEDED)
+- /app/api/analysis/state/route.ts (NEEDED)
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+FOR IMMEDIATE USE (Agent with limited autonomy):
+1. Upload transcripts manually to input/
+2. Run: npm run analyze (or API once POST /api/analysis/analyze exists)
+3. Query results via: GET /api/kms/decisions, /api/kms/summary, etc.
+4. Agent can handle queries but not sourcing
+
+FOR FULL AUTONOMY (Recommended):
+1. Implement 3 critical gaps (1.5 days)
+2. Run integration tests (1 hour)
+3. Deploy new endpoints (1 hour)
+4. Agent can now handle full workflow without manual intervention
+
+LONG-TERM (95%+ Parity):
+1. Implement P1 gaps (1 day) - complete API feature parity
+2. Add context injection (2 hours) - agents self-aware
+3. Comprehensive API tests (4 hours) - confidence in reliability
+
+================================================================================
+SCORING RUBRIC
+================================================================================
+
+Agent-Nativeness is measured by: "Can an agent do everything a user can?"
+
+5 Star (100%): Agent has REST API equivalents for every UI action
+4 Star (80-99%): Agent has API for core workflows, CLI for edge cases
+3 Star (60-79%): Agent can query data, triggering requires CLI
+2 Star (40-59%): Agent can read data, but limited write operations
+1 Star (0-39%): Agent must resort to bash for most operations
+
+CURRENT: 3 Star (74%)
+  ✅ Core data queries complete
+  ✅ KMS relationships work
+  ⚠️ File operations require bash
+  ⚠️ Analysis trigger requires subprocess npm
+
+TARGET: 4 Star (90%+)
+  ✅ File upload via API
+  ✅ Analysis trigger via API
+  ✅ System state queryable
+  ✅ Full data operations
+
+================================================================================
+RISK ASSESSMENT
+================================================================================
+
+If deploying to production without fixes:
+- HIGH RISK: Agent cannot independently fetch/upload transcripts
+- MEDIUM RISK: Analysis trigger requires error parsing from CLI
+- MEDIUM RISK: System state unknown to agent (could attempt blind operations)
+- LOW RISK: KMS queries and data operations are robust
+
+Mitigations:
+- Always pre-load transcripts manually
+- Wrap CLI calls with error parsing in agent code
+- Pre-check system state before triggering analysis
+- Consider this Beta until P0 gaps are closed
+
+================================================================================
+FINAL VERDICT
+================================================================================
+
+Current Status: 74% Agent-Native (Good foundation)
+Problems: 3 critical API gaps
+Solution: 1.5 days of implementation
+Result: Becomes 90%+ agent-native and fully autonomous
+
+The architecture is SOUND for agent operation. The system uses:
+✓ Non-interactive CLI
+✓ Shared workspace (no sandbox)
+✓ Stateful manifest tracking
+✓ Structured data formats (JSON, Markdown)
+✓ Comprehensive error handling
+
+The GAPS are tactical, not architectural:
+✗ Missing 3 REST endpoints (file upload, analysis trigger, state inspection)
+✗ Incomplete API filtering (actions endpoint lacks owner/status params)
+✗ No dynamic context injection to agents
+
+All gaps are ADDRESSABLE with straightforward implementations. No major
+refactoring required. Each gap has a clear fix path (see AGENT_NATIVE_FIX_GUIDE.md).
+
+RECOMMENDATION: Implement P0 gaps before deploying to production agents.
+
+================================================================================
+Review Date: March 2, 2026
+Reviewer: Claude Code - Agent-Native Architecture Specialist
+Repository: /Users/georgeeastwood/AI Projects/Transcript To Strategy/transcript-analyzer-unified
+Review Scope: CLI commands, API routes, file operations, state queries, KMS access
+================================================================================
