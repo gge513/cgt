@@ -114,6 +114,7 @@ export function safePath(basePath: string, ...segments: string[]): string {
  */
 const ALLOWED_FILENAMES = new Set([
   ".processed_kms.json",
+  ".processed_kms_actions.json",
   ".processed_manifest.json",
   ".processed_kms_inferred.json",
   ".pipeline.log",

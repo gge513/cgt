@@ -35,13 +35,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(cachedSummary);
     }
 
-    // Load KMS data using the abstraction layer
+    // Load KMS data using the abstraction layer (mtime-cached, one disk read)
     const store = getKMSStore();
     const kmsData = store.loadData();
-    const decisions = store.getDecisions();
-    const actions = store.getActions();
-    const commitments = store.getCommitments();
-    const risks = store.getRisks();
+    const decisions = store.getDecisions();       // cache hit (same mtime epoch)
+    const actions = store.getActions();           // cache hit (same mtime epoch)
+    const commitments = store.getCommitments();   // cache hit (same mtime epoch)
+    const risks = store.getRisks();               // cache hit (same mtime epoch)
 
     if (!decisions || decisions.length === 0) {
       return NextResponse.json(
@@ -51,19 +51,19 @@ export async function GET(request: NextRequest) {
     }
 
     const statusCounts = {
-      pending: decisions.filter((d: any) => d.status === 'pending').length,
-      in_progress: decisions.filter((d: any) => d.status === 'in_progress').length,
-      completed: decisions.filter((d: any) => d.status === 'completed').length,
+      pending: decisions.filter((d) => d.status === 'pending').length,
+      in_progress: decisions.filter((d) => d.status === 'in-progress').length,
+      completed: decisions.filter((d) => d.status === 'completed').length,
     };
 
     const riskCounts = {
-      low: risks.filter((r: any) => r.severity === 'low').length,
-      medium: risks.filter((r: any) => r.severity === 'medium').length,
-      high: risks.filter((r: any) => r.severity === 'high').length,
+      low: risks.filter((r) => r.severity === 'low').length,
+      medium: risks.filter((r) => r.severity === 'medium').length,
+      high: risks.filter((r) => r.severity === 'high').length,
     };
 
     const totalItems = decisions.length + actions.length + commitments.length;
-    const escalatedCount = decisions.filter((d: any) => d.is_escalated).length;
+    const escalatedCount = decisions.filter((d) => (d as any).is_escalated).length;
 
     const summary = {
       summary: {

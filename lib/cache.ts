@@ -16,6 +16,8 @@ import { statSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { getLogger } from '../src/utils/logging';
 import { SafeFileContext } from '../src/utils/paths';
+import { kmsStoreSchema } from './validation-schemas';
+import type { KMSStore } from '../src/types';
 
 const logger = getLogger();
 
@@ -45,20 +47,21 @@ const fileContext = new SafeFileContext(process.cwd());
 // File Modification Time Cache (Strategy 1)
 // ==========================================
 
-const mtimeCache = new Map<string, MtimeCacheEntry<any>>();
+const mtimeCache = new Map<string, MtimeCacheEntry<unknown>>();
 
 /**
  * Get KMS data from cache if file hasn't changed, otherwise reload from disk
  *
  * This provides:
  * - Automatic cache invalidation (no stale data)
+ * - Zod runtime validation (catches corrupt files)
  * - Zero external dependencies
  * - Minimal overhead (one stat call per request)
  *
- * @returns Parsed KMS data from .processed_kms.json
- * @throws If file cannot be read
+ * @returns Parsed and validated KMS data from .processed_kms.json
+ * @throws If file cannot be read or validation fails
  */
-export function getKMSData(): any {
+export function getKMSData(): KMSStore {
   try {
     const safePath = fileContext.resolve(KMS_FILE_PATH);
     const stat = statSync(safePath);
@@ -69,20 +72,20 @@ export function getKMSData(): any {
     if (cached && cached.mtime === currentMtime) {
       // Cache hit: file hasn't changed since last read
       logger.debug('KMS cache hit (mtime match)');
-      return cached.data;
+      return cached.data as KMSStore;
     }
 
     // Cache miss: reload from disk and store new entry
     logger.debug('KMS cache miss, reloading from disk');
     const content = readFileSync(safePath, 'utf-8');
-    const data = JSON.parse(content);
+    const data = kmsStoreSchema.parse(JSON.parse(content));
 
     mtimeCache.set('kms', {
       data,
       mtime: currentMtime,
     });
 
-    return data;
+    return data as KMSStore;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logger.error(`Failed to load KMS data: ${message}`);
@@ -114,7 +117,7 @@ export function clearMtimeCache(): void {
 // TTL-Based Request Cache (Strategy 2)
 // ==========================================
 
-const ttlCache = new Map<string, TtlCacheEntry<any>>();
+const ttlCache = new Map<string, TtlCacheEntry<unknown>>();
 
 /**
  * Get value from TTL cache if not expired

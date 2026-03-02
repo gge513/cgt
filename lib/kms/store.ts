@@ -7,11 +7,13 @@
  * Supports multiple implementations (file, database, cache) through the IKMSStore interface.
  */
 
-import { readFileSync, writeFileSync } from 'fs';
+import { writeFileSync, renameSync } from 'fs';
 import { join } from 'path';
 import type { KMSStore, KMSDecision, KMSActionItem, KMSCommitment, KMSRisk } from '@/src/types';
 import { getLogger } from '@/src/utils/logging';
 import { SafeFileContext } from '@/src/utils/paths';
+import { getKMSData } from '../cache';
+import { kmsStoreSchema } from '../validation-schemas';
 
 const logger = getLogger();
 
@@ -78,14 +80,15 @@ export class KMSFileStore implements IKMSStore {
   }
 
   /**
-   * Load complete KMS data from disk
+   * Load complete KMS data from disk with mtime-based caching
+   * Uses getKMSData() which eliminates N+1 reads across multiple accessor calls
    */
   loadData(): KMSStore {
     try {
-      const content = readFileSync(this.dataPath, 'utf-8');
-      const data = JSON.parse(content) as KMSStore;
-      logger.debug('KMS data loaded from file');
-      return data;
+      const raw = getKMSData();
+      const data = kmsStoreSchema.parse(raw);
+      logger.debug('KMS data loaded from cache');
+      return data as KMSStore;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to load KMS data: ${message}`);
@@ -94,12 +97,15 @@ export class KMSFileStore implements IKMSStore {
   }
 
   /**
-   * Save KMS data to disk
+   * Save KMS data to disk with atomic write
+   * Writes to temp file first, then atomically renames to prevent corruption
    */
   saveData(data: KMSStore): void {
     try {
-      writeFileSync(this.dataPath, JSON.stringify(data, null, 2), 'utf-8');
-      logger.debug('KMS data saved to file');
+      const tempPath = this.dataPath + '.tmp';
+      writeFileSync(tempPath, JSON.stringify(data, null, 2), 'utf-8');
+      renameSync(tempPath, this.dataPath);
+      logger.debug('KMS data saved to file (atomic)');
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to save KMS data: ${message}`);

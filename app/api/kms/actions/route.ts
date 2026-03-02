@@ -15,6 +15,8 @@ import { validateAuth } from '@/lib/auth';
 import { cacheGet, cacheSet, cacheInvalidatePattern } from '@/lib/cache';
 import { getKMSStore } from '@/lib/kms';
 import { getLogger } from '@/src/utils/logging';
+import { SafeFileContext } from '@/src/utils/paths';
+import { actionsStoreSchema } from '@/lib/validation-schemas';
 
 const logger = getLogger();
 
@@ -33,12 +35,16 @@ interface ActionsStore {
 
 const ACTIONS_PATH = '.processed_kms_actions.json';
 
+// Security: Use SafeFileContext to prevent path traversal attacks
+const fileContext = new SafeFileContext(process.cwd());
+const SAFE_ACTIONS_PATH = fileContext.resolve(ACTIONS_PATH);
+
 /**
- * Load actions store from disk
+ * Load actions store from disk with validation
  */
 function loadActions(): ActionsStore {
   try {
-    if (!fs.existsSync(ACTIONS_PATH)) {
+    if (!fs.existsSync(SAFE_ACTIONS_PATH)) {
       return {
         version: 1,
         lastUpdated: new Date().toISOString(),
@@ -46,10 +52,11 @@ function loadActions(): ActionsStore {
       };
     }
 
-    const content = fs.readFileSync(ACTIONS_PATH, 'utf-8');
-    return JSON.parse(content);
+    const content = fs.readFileSync(SAFE_ACTIONS_PATH, 'utf-8');
+    return actionsStoreSchema.parse(JSON.parse(content)) as ActionsStore;
   } catch (error) {
-    console.warn('Could not load actions, creating new store');
+    const message = error instanceof Error ? error.message : String(error);
+    logger.warn(`Could not load actions: ${message}, creating new store`);
     return {
       version: 1,
       lastUpdated: new Date().toISOString(),
@@ -59,14 +66,18 @@ function loadActions(): ActionsStore {
 }
 
 /**
- * Save actions store to disk
+ * Save actions store to disk with atomic write
  */
 function saveActions(store: ActionsStore): void {
   try {
     store.lastUpdated = new Date().toISOString();
-    fs.writeFileSync(ACTIONS_PATH, JSON.stringify(store, null, 2), 'utf-8');
+    const tempPath = SAFE_ACTIONS_PATH + '.tmp';
+    fs.writeFileSync(tempPath, JSON.stringify(store, null, 2), 'utf-8');
+    fs.renameSync(tempPath, SAFE_ACTIONS_PATH);  // atomic rename
+    logger.debug('Actions store saved (atomic)');
   } catch (error) {
-    console.error('Failed to save actions:', error);
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error(`Failed to save actions: ${message}`);
   }
 }
 

@@ -242,3 +242,110 @@ export function tryValidate<T>(
     return null;
   }
 }
+
+// ==========================================
+// KMS Store Zod Schemas (accurate to src/types.ts)
+// ==========================================
+
+/**
+ * Schema for KMS Decision as stored in .processed_kms.json
+ * Matches KMSDecision interface exactly
+ */
+export const kmsDecisionStoreSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  owner: z.string().optional(),
+  date: z.string(),
+  meeting: z.string(),
+  relatedTopics: z.array(z.string()),
+  status: z.enum(['pending', 'in-progress', 'completed']),
+  context: z.string().optional(),
+});
+
+/**
+ * Schema for KMS Action Item as stored in .processed_kms.json
+ * Matches KMSActionItem interface exactly
+ */
+export const kmsActionItemStoreSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  owner: z.string().optional(),
+  dueDate: z.string().optional(),
+  meeting: z.string(),
+  status: z.enum(['not-started', 'in-progress', 'blocked', 'completed']),
+  blockers: z.array(z.string()),
+  context: z.string().optional(),
+});
+
+/**
+ * Schema for KMS Commitment as stored in .processed_kms.json
+ * Matches KMSCommitment interface exactly
+ */
+export const kmsCommitmentStoreSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  owner: z.string().optional(),
+  dueDate: z.string().optional(),
+  meeting: z.string(),
+  status: z.enum(['pending', 'in-progress', 'completed']),
+  context: z.string().optional(),
+});
+
+/**
+ * Schema for KMS Risk as stored in .processed_kms.json
+ * Matches KMSRisk interface exactly
+ */
+export const kmsRiskStoreSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  severity: z.enum(['low', 'medium', 'high']),
+  meeting: z.string(),
+  mitigation: z.string().optional(),
+  context: z.string().optional(),
+});
+
+/**
+ * Schema for KMS Data (single meeting's data)
+ * Matches KMSData interface exactly
+ */
+export const kmsDataSchema = z.object({
+  meeting: z.string(),
+  analyzedAt: z.string(),
+  date: z.string(),
+  model: z.string().optional(),
+  decisions: z.array(kmsDecisionStoreSchema),
+  actionItems: z.array(kmsActionItemStoreSchema),
+  commitments: z.array(kmsCommitmentStoreSchema),
+  risks: z.array(kmsRiskStoreSchema),
+});
+
+/**
+ * Schema for KMS Store (root object)
+ * Matches KMSStore interface exactly
+ */
+export const kmsStoreSchema = z.object({
+  version: z.literal(1),
+  lastUpdated: z.string(),
+  meetings: z.record(z.string(), kmsDataSchema),
+});
+
+/**
+ * Schema for Actions Store record
+ * Matches ActionRecord interface in app/api/kms/actions/route.ts
+ */
+export const actionRecordSchema = z.object({
+  decisionId: z.string(),
+  action: z.enum(['escalate', 'resolve', 'high-priority']),
+  executedAt: z.string(),
+  userId: z.string().optional(),
+});
+
+/**
+ * Schema for Actions Store (root object)
+ * Matches ActionsStore interface in app/api/kms/actions/route.ts
+ */
+export const actionsStoreSchema = z.object({
+  version: z.literal(1),
+  lastUpdated: z.string(),
+  actions: z.array(actionRecordSchema),
+});
