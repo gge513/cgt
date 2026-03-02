@@ -1,8 +1,8 @@
 /**
- * KMS Strategic Actions Endpoint (Cached)
+ * KMS Strategic Actions Endpoint
  *
  * Manages user actions on decisions (escalate, resolve, mark high-priority).
- * GET: Returns audit log of executed actions (cached)
+ * GET: Returns audit log of executed actions
  * POST: Execute an action and update KMS store
  *
  * Type-safe: Uses proper types for action records
@@ -14,7 +14,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import type { KMSDecision } from '@/src/types';
 import { validateAuth } from '@/lib/auth';
-import { cacheGet, cacheSet, cacheInvalidatePattern } from '@/lib/cache';
 import { getKMSStore } from '@/lib/kms';
 import { getLogger } from '@/src/utils/logging';
 import { SafeFileContext } from '@/src/utils/paths';
@@ -171,11 +170,6 @@ export async function POST(request: NextRequest) {
     // Save updated store
     saveActions(store);
 
-    // Invalidate related caches
-    cacheInvalidatePattern('actions:');
-    cacheInvalidatePattern('summary');
-    logger.debug(`Cache invalidated for executed action: ${action}`);
-
     return NextResponse.json({
       success: true,
       action: actionRecord,
@@ -203,14 +197,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Check TTL cache first
-    const cacheKey = 'actions:list';
-    const cached = cacheGet(cacheKey);
-    if (cached) {
-      logger.debug('Actions list returned from cache');
-      return NextResponse.json(cached);
-    }
-
     const store = loadActions();
 
     const result = {
@@ -219,10 +205,6 @@ export async function GET(request: NextRequest) {
       totalActions: store.actions.length,
       actions: store.actions,
     };
-
-    // Cache the result (30 seconds)
-    cacheSet(cacheKey, result);
-    logger.debug('Actions list cached');
 
     return NextResponse.json(result);
   } catch (error) {

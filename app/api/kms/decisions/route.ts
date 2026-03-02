@@ -1,8 +1,8 @@
 /**
- * KMS Decisions Endpoint (Cached)
+ * KMS Decisions Endpoint
  *
  * Returns all decisions across meetings with optional filtering.
- * Uses dual-layer caching with query-aware cache keys.
+ * Uses mtime caching for KMS file reads.
  *
  * Type-safe: Uses proper KMS types from src/types.ts
  */
@@ -10,7 +10,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { KMSDecision } from '@/src/types';
 import { validateAuth } from '@/lib/auth';
-import { cacheGet, cacheSet } from '@/lib/cache';
 import { getKMSStore } from '@/lib/kms';
 import { getLogger } from '@/src/utils/logging';
 
@@ -30,18 +29,7 @@ export async function GET(request: NextRequest) {
     // Get query parameters for filtering
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
-    const severity = searchParams.get('severity');
     const keyword = searchParams.get('keyword');
-
-    // Create cache key based on query parameters
-    const cacheKey = `decisions:${status || ''}:${severity || ''}:${keyword || ''}`;
-
-    // Check TTL cache first
-    const cached = cacheGet(cacheKey);
-    if (cached) {
-      logger.debug(`Decisions returned from cache: ${cacheKey}`);
-      return NextResponse.json(cached);
-    }
 
     // Load decisions using the abstraction layer
     const store = getKMSStore();
@@ -75,10 +63,6 @@ export async function GET(request: NextRequest) {
       filtered: filtered.length,
       decisions: filtered,
     };
-
-    // Cache the filtered result (30 seconds)
-    cacheSet(cacheKey, result);
-    logger.debug(`Decisions cached: ${cacheKey}`);
 
     return NextResponse.json(result);
   } catch (error) {

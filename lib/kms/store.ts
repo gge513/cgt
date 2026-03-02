@@ -9,7 +9,7 @@
 
 import { writeFileSync, renameSync } from 'fs';
 import { join } from 'path';
-import type { KMSStore, KMSDecision, KMSActionItem, KMSCommitment, KMSRisk } from '@/src/types';
+import type { KMSStore, KMSData, KMSDecision, KMSActionItem, KMSCommitment, KMSRisk } from '@/src/types';
 import { getLogger } from '@/src/utils/logging';
 import { SafeFileContext } from '@/src/utils/paths';
 import { getKMSData } from '../cache';
@@ -114,75 +114,51 @@ export class KMSFileStore implements IKMSStore {
   }
 
   /**
-   * Get all decisions across all meetings
+   * Extract items of a specific type from all meetings
+   * Private helper to avoid duplication across getDecisions, getActions, etc.
    */
-  getDecisions(): KMSDecision[] {
+  private getFromMeetings<T>(accessor: (meeting: KMSData) => T[]): T[] {
     const data = this.loadData();
-    const decisions: KMSDecision[] = [];
+    const items: T[] = [];
 
     if (data.meetings && typeof data.meetings === 'object') {
       Object.values(data.meetings).forEach((meeting) => {
-        if (meeting.decisions && Array.isArray(meeting.decisions)) {
-          decisions.push(...meeting.decisions);
+        const meetingItems = accessor(meeting);
+        if (Array.isArray(meetingItems)) {
+          items.push(...meetingItems);
         }
       });
     }
 
-    return decisions;
+    return items;
+  }
+
+  /**
+   * Get all decisions across all meetings
+   */
+  getDecisions(): KMSDecision[] {
+    return this.getFromMeetings((m) => m.decisions);
   }
 
   /**
    * Get all action items across all meetings
    */
   getActions(): KMSActionItem[] {
-    const data = this.loadData();
-    const actions: KMSActionItem[] = [];
-
-    if (data.meetings && typeof data.meetings === 'object') {
-      Object.values(data.meetings).forEach((meeting) => {
-        if (meeting.actionItems && Array.isArray(meeting.actionItems)) {
-          actions.push(...meeting.actionItems);
-        }
-      });
-    }
-
-    return actions;
+    return this.getFromMeetings((m) => m.actionItems);
   }
 
   /**
    * Get all commitments across all meetings
    */
   getCommitments(): KMSCommitment[] {
-    const data = this.loadData();
-    const commitments: KMSCommitment[] = [];
-
-    if (data.meetings && typeof data.meetings === 'object') {
-      Object.values(data.meetings).forEach((meeting) => {
-        if (meeting.commitments && Array.isArray(meeting.commitments)) {
-          commitments.push(...meeting.commitments);
-        }
-      });
-    }
-
-    return commitments;
+    return this.getFromMeetings((m) => m.commitments);
   }
 
   /**
    * Get all risks across all meetings
    */
   getRisks(): KMSRisk[] {
-    const data = this.loadData();
-    const risks: KMSRisk[] = [];
-
-    if (data.meetings && typeof data.meetings === 'object') {
-      Object.values(data.meetings).forEach((meeting) => {
-        if (meeting.risks && Array.isArray(meeting.risks)) {
-          risks.push(...meeting.risks);
-        }
-      });
-    }
-
-    return risks;
+    return this.getFromMeetings((m) => m.risks);
   }
 
   /**

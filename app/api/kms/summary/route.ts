@@ -1,10 +1,8 @@
 /**
- * KMS Summary Endpoint (Cached)
+ * KMS Summary Endpoint
  *
  * Returns aggregated statistics across all meetings.
- * Uses dual-layer caching:
- * - File mtime cache: Automatic invalidation when KMS file changes
- * - TTL cache: 30-second cache of aggregated results
+ * Uses mtime caching for KMS file reads (automatic invalidation when file changes).
  *
  * Type-safe: Uses proper KMS types from src/types.ts
  */
@@ -13,7 +11,6 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { validateAuth } from '@/lib/auth';
-import { cacheGet, cacheSet } from '@/lib/cache';
 import { getKMSStore } from '@/lib/kms';
 import { getLogger } from '@/src/utils/logging';
 
@@ -30,13 +27,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Check TTL cache first for aggregated results
-    const cachedSummary = cacheGet('summary');
-    if (cachedSummary) {
-      logger.debug('Summary returned from TTL cache');
-      return NextResponse.json(cachedSummary);
-    }
-
     // Load KMS data using the abstraction layer (mtime-cached, one disk read)
     const store = getKMSStore();
     const kmsData = store.loadData();
@@ -85,10 +75,6 @@ export async function GET(request: NextRequest) {
       last_updated: kmsData.lastUpdated || 'Unknown',
       total_meetings: Object.keys(kmsData.meetings || {}).length,
     };
-
-    // Cache the aggregated result (30 seconds)
-    cacheSet('summary', summary);
-    logger.debug('Summary computed and cached');
 
     return NextResponse.json(summary);
   } catch (error) {
