@@ -24,6 +24,8 @@ export interface TranscriptMetadata {
   date: string;                // YYYY-MM-DD or "Unknown"
   concepts: string[];          // Array of identified concepts/themes
   source?: string;             // Optional source identifier
+  filename?: string;           // Optional filename for display
+  content?: string;            // Optional full transcript content for analysis
 }
 
 /**
