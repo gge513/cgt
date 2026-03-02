@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useValidationStore } from '@/lib/stores/validations';
 import { RelationshipValidator } from './RelationshipValidator';
+import { ActionButtons } from './ActionButtons';
 
 export interface Decision {
   id?: string;
@@ -273,6 +274,9 @@ export function DecisionsTable({ decisions, onSelectDecision }: DecisionsTablePr
           <RelationshipValidatorSection
             decision={selectedDecision}
           />
+
+          {/* Strategic Actions */}
+          <ActionButtons decision={selectedDecision} />
         </div>
       )}
     </div>
