@@ -6,6 +6,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { getLogger } from "../utils/logging";
+import { SafeFileContext } from "../utils/paths";
 import { parseFrontmatter, extractMarkdownContent } from "../utils/parsing";
 import { synthesizeAnalysis } from "./synthesisCoordinator";
 import { generateMarkdownReport } from "./reportGenerator";
@@ -30,18 +31,32 @@ export interface AnalysisOptions {
 
 /**
  * Read markdown files from processing directory
+ * Uses safe path resolution to prevent directory traversal
  */
 function readMarkdownFiles(processingDir: string): string[] {
   try {
+    // Validate the directory exists
     if (!fs.existsSync(processingDir)) {
       logger.warn(`Processing directory not found: ${processingDir}`);
       return [];
     }
 
+    // Create a safe context for the processing directory
+    const processingContext = new SafeFileContext(path.resolve(processingDir));
+
     const files = fs.readdirSync(processingDir);
     return files
       .filter((f) => f.endsWith(".md"))
-      .map((f) => path.join(processingDir, f));
+      .map((f) => {
+        try {
+          // Validate each file path is within the processing directory
+          return processingContext.resolve(f);
+        } catch (error) {
+          logger.warn(`Skipping file due to path validation: ${f}`);
+          return null;
+        }
+      })
+      .filter((f): f is string => f !== null);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logger.error(`Error reading markdown files: ${message}`);
@@ -218,16 +233,27 @@ export async function analyzeConvertedFiles(
 
     // Write report (using first markdown file date for naming)
     const reportFilename = generateReportFilename(filesToAnalyze[0], options.model);
-    const reportPath = path.join(options.outputDir, reportFilename);
 
-    if (!fs.existsSync(options.outputDir)) {
-      fs.mkdirSync(options.outputDir, { recursive: true });
+    try {
+      // Create a safe context for the output directory
+      const outputContext = new SafeFileContext(path.resolve(options.outputDir));
+
+      if (!fs.existsSync(options.outputDir)) {
+        fs.mkdirSync(options.outputDir, { recursive: true });
+      }
+
+      // Validate the report filename path
+      const reportPath = outputContext.resolve(reportFilename);
+      fs.writeFileSync(reportPath, reportContent, "utf-8");
+      logger.info(`✓ Report written: ${reportFilename}\n`);
+
+      stats.reportFiles.push(reportPath);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to write report: ${message}`);
+      stats.failed++;
+      stats.errors.push(`Report writing failed: ${message}`);
     }
-
-    fs.writeFileSync(reportPath, reportContent, "utf-8");
-    logger.info(`✓ Report written: ${reportFilename}\n`);
-
-    stats.reportFiles.push(reportPath);
     stats.analyzed = transcripts.length;
 
     // Extract KMS data from report
@@ -269,11 +295,18 @@ export async function analyzeConvertedFiles(
             relationships: inferencedRelationships,
           };
 
-          const inferredPath = path.join(process.cwd(), ".processed_kms_inferred.json");
-          fs.writeFileSync(inferredPath, JSON.stringify(inferredStore, null, 2), "utf-8");
+          try {
+            const cwd = path.resolve(process.cwd());
+            const cwdContext = new SafeFileContext(cwd);
+            const inferredPath = cwdContext.resolve(".processed_kms_inferred.json");
+            fs.writeFileSync(inferredPath, JSON.stringify(inferredStore, null, 2), "utf-8");
 
-          logger.info(`✓ Inferred ${inferencedRelationships.length} relationships`);
-          logger.debug(`Inferred relationships saved to .processed_kms_inferred.json`);
+            logger.info(`✓ Inferred ${inferencedRelationships.length} relationships`);
+            logger.debug(`Inferred relationships saved to .processed_kms_inferred.json`);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            logger.warn(`Failed to save inferred relationships: ${message}`);
+          }
         } else {
           logger.debug("No relationships inferred from KMS data");
         }

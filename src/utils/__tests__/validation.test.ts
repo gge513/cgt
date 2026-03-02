@@ -25,6 +25,14 @@ import {
   validateStrategicRecommendation,
   validateTimelineItem,
 } from "../parsing";
+import {
+  resolveSafePath,
+  isValidFilename,
+  safePath,
+  isAllowedKMSFile,
+  allowKMSFile,
+  SafeFileContext,
+} from "../paths";
 
 describe("Validation Utilities", () => {
   let tempDir: string;
@@ -561,6 +569,176 @@ describe("Validation Utilities", () => {
       const result = validateTimelineItem(invalid);
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe("Path Security - resolveSafePath", () => {
+    let baseDir: string;
+
+    beforeEach(() => {
+      baseDir = path.resolve(tempDir, "safe");
+      fs.mkdirSync(baseDir, { recursive: true });
+    });
+
+    test("should resolve valid relative paths", () => {
+      const result = resolveSafePath(baseDir, "file.json");
+
+      expect(result).toBe(path.join(baseDir, "file.json"));
+      expect(result.startsWith(baseDir)).toBe(true);
+    });
+
+    test("should resolve paths with subdirectories", () => {
+      const result = resolveSafePath(baseDir, "subdir/file.json");
+
+      expect(result).toBe(path.join(baseDir, "subdir/file.json"));
+      expect(result.startsWith(baseDir)).toBe(true);
+    });
+
+    test("should reject path traversal with ../", () => {
+      expect(() => resolveSafePath(baseDir, "../../../etc/passwd")).toThrow(
+        "Path traversal detected"
+      );
+    });
+
+    test("should reject path traversal with ..\\", () => {
+      expect(() => resolveSafePath(baseDir, "..\\..\\file.json")).toThrow();
+    });
+
+    test("should reject mixed traversal patterns", () => {
+      expect(() => resolveSafePath(baseDir, "subdir/../../etc/passwd")).toThrow();
+    });
+
+    test("should reject absolute paths", () => {
+      expect(() => resolveSafePath(baseDir, "/etc/passwd")).toThrow();
+    });
+
+    test("should reject empty base path", () => {
+      expect(() => resolveSafePath("", "file.json")).toThrow();
+    });
+
+    test("should reject null/undefined paths", () => {
+      expect(() => resolveSafePath(baseDir, null as any)).toThrow();
+    });
+
+    test("should be idempotent", () => {
+      const path1 = resolveSafePath(baseDir, "file.json");
+      const path2 = resolveSafePath(baseDir, "file.json");
+
+      expect(path1).toBe(path2);
+    });
+  });
+
+  describe("Path Security - isValidFilename", () => {
+    test("should accept valid filenames", () => {
+      expect(isValidFilename(".processed_kms.json")).toBe(true);
+      expect(isValidFilename("file-name_123.json")).toBe(true);
+      expect(isValidFilename("data.txt")).toBe(true);
+    });
+
+    test("should reject path traversal", () => {
+      expect(isValidFilename("../file.json")).toBe(false);
+      expect(isValidFilename("../../secret.key")).toBe(false);
+    });
+
+    test("should reject path separators", () => {
+      expect(isValidFilename("subdir/file.json")).toBe(false);
+      expect(isValidFilename("subdir\\file.json")).toBe(false);
+    });
+
+    test("should reject null bytes", () => {
+      expect(isValidFilename("file\0.json")).toBe(false);
+    });
+
+    test("should reject absolute paths", () => {
+      expect(isValidFilename("/etc/passwd")).toBe(false);
+    });
+
+    test("should reject empty filename", () => {
+      expect(isValidFilename("")).toBe(false);
+      expect(isValidFilename("   ")).toBe(false);
+    });
+
+    test("should reject non-string input", () => {
+      expect(isValidFilename(null as any)).toBe(false);
+      expect(isValidFilename(undefined as any)).toBe(false);
+    });
+  });
+
+  describe("Path Security - safePath", () => {
+    let baseDir: string;
+
+    beforeEach(() => {
+      baseDir = path.resolve(tempDir, "safe");
+      fs.mkdirSync(baseDir, { recursive: true });
+    });
+
+    test("should join multiple segments safely", () => {
+      const result = safePath(baseDir, "subdir", "file.json");
+
+      expect(result).toBe(path.join(baseDir, "subdir", "file.json"));
+      expect(result.startsWith(baseDir)).toBe(true);
+    });
+
+    test("should reject traversal in segments", () => {
+      expect(() => safePath(baseDir, "subdir", "..", "..", "etc", "passwd")).toThrow();
+    });
+  });
+
+  describe("Path Security - KMS File Whitelist", () => {
+    test("should allow whitelisted files", () => {
+      expect(isAllowedKMSFile(".processed_kms.json")).toBe(true);
+      expect(isAllowedKMSFile(".processed_manifest.json")).toBe(true);
+    });
+
+    test("should reject non-whitelisted files", () => {
+      expect(isAllowedKMSFile("random_file.json")).toBe(false);
+      expect(isAllowedKMSFile("/etc/passwd")).toBe(false);
+    });
+
+    test("should allow adding new files to whitelist", () => {
+      expect(isAllowedKMSFile("new_file.json")).toBe(false);
+
+      allowKMSFile("new_file.json");
+
+      expect(isAllowedKMSFile("new_file.json")).toBe(true);
+    });
+
+    test("should reject invalid filenames when adding to whitelist", () => {
+      expect(() => allowKMSFile("../etc/passwd")).toThrow();
+      expect(() => allowKMSFile("/etc/passwd")).toThrow();
+    });
+  });
+
+  describe("Path Security - SafeFileContext", () => {
+    let baseDir: string;
+    let context: SafeFileContext;
+
+    beforeEach(() => {
+      baseDir = path.resolve(tempDir, "context");
+      fs.mkdirSync(baseDir, { recursive: true });
+      context = new SafeFileContext(baseDir);
+    });
+
+    test("should resolve paths within context", () => {
+      const resolved = context.resolve("file.json");
+
+      expect(resolved.startsWith(baseDir)).toBe(true);
+    });
+
+    test("should join paths safely in context", () => {
+      const joined = context.join("subdir", "file.json");
+
+      expect(joined.startsWith(baseDir)).toBe(true);
+    });
+
+    test("should reject traversal in context", () => {
+      expect(() => context.resolve("../../../etc/passwd")).toThrow();
+    });
+
+    test("should return base directory", () => {
+      const base = context.getBaseDir();
+
+      expect(base).toBe(path.resolve(baseDir));
     });
   });
 });

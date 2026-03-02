@@ -4,11 +4,14 @@
  */
 
 import * as fs from "fs";
+import * as path from "path";
 import { getLogger } from "../utils/logging";
+import { SafeFileContext, isAllowedKMSFile } from "../utils/paths";
 import { KMSData, KMSStore, KMSDecision, KMSActionItem, KMSCommitment, KMSRisk } from "../types";
 
 const logger = getLogger();
 const KMS_STORE_PATH = ".processed_kms.json";
+const fileContext = new SafeFileContext(process.cwd());
 
 export class KMSStoreManager {
   private store: KMSStore;
@@ -19,36 +22,57 @@ export class KMSStoreManager {
 
   /**
    * Load KMS store from disk
+   * Uses safe path resolution to prevent path traversal attacks
    */
   private loadStore(): KMSStore {
     try {
-      if (!fs.existsSync(KMS_STORE_PATH)) {
-        return {
-          version: 1,
-          lastUpdated: new Date().toISOString(),
-          meetings: {},
-        };
+      // Validate filename is allowed
+      if (!isAllowedKMSFile(KMS_STORE_PATH)) {
+        logger.warn(`Access to file denied: ${KMS_STORE_PATH}`);
+        return this.createEmptyStore();
       }
 
-      const content = fs.readFileSync(KMS_STORE_PATH, "utf-8");
+      // Resolve path safely
+      const safePath = fileContext.resolve(KMS_STORE_PATH);
+
+      if (!fs.existsSync(safePath)) {
+        return this.createEmptyStore();
+      }
+
+      const content = fs.readFileSync(safePath, "utf-8");
       return JSON.parse(content);
     } catch (error) {
       logger.warn("Could not load KMS store, creating new one");
-      return {
-        version: 1,
-        lastUpdated: new Date().toISOString(),
-        meetings: {},
-      };
+      return this.createEmptyStore();
     }
   }
 
   /**
+   * Create empty KMS store
+   */
+  private createEmptyStore(): KMSStore {
+    return {
+      version: 1,
+      lastUpdated: new Date().toISOString(),
+      meetings: {},
+    };
+  }
+
+  /**
    * Save KMS store to disk
+   * Uses safe path resolution to prevent path traversal attacks
    */
   saveStore(): void {
     try {
+      // Validate filename is allowed
+      if (!isAllowedKMSFile(KMS_STORE_PATH)) {
+        logger.warn(`Cannot write to file: ${KMS_STORE_PATH} not in whitelist`);
+        return;
+      }
+
       this.store.lastUpdated = new Date().toISOString();
-      fs.writeFileSync(KMS_STORE_PATH, JSON.stringify(this.store, null, 2));
+      const safePath = fileContext.resolve(KMS_STORE_PATH);
+      fs.writeFileSync(safePath, JSON.stringify(this.store, null, 2));
       logger.debug("KMS store saved");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
