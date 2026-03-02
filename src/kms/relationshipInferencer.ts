@@ -80,7 +80,9 @@ Focus on:
 3. Related themes: Do items address the same topic across meetings?
 4. Cross-meeting patterns: Are similar decisions being made in different meetings?
 
-Return ONLY a JSON array of relationship objects. If you find no relationships, return an empty array [].`;
+Return ONLY a JSON array of relationship objects. Do not include any text before or after the JSON array. If you find no relationships, return: []
+
+IMPORTANT: Your response must start with [ and end with ], with nothing else.`;
 
   return prompt;
 }
@@ -93,14 +95,43 @@ function parseInferenceResponse(
   itemMap: Map<string, { type: string; meeting: string }>
 ): InferredRelationship[] {
   try {
-    // Extract JSON array from response
-    const jsonMatch = response.match(/\[[\s\S]*\]/);
+    // Clean up response
+    let cleanedResponse = response.trim();
+
+    // Strategy 1: Remove markdown code block wrappers if present
+    const codeBlockMatch = cleanedResponse.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      cleanedResponse = codeBlockMatch[1].trim();
+    }
+
+    // Strategy 2: Try to match [...]
+    let jsonMatch = cleanedResponse.match(/\[[\s\S]*\]/);
+
+    // Strategy 3: Find first [ and last ]
     if (!jsonMatch) {
-      logger.warn("No JSON array found in inference response");
+      const startIdx = cleanedResponse.indexOf('[');
+      const endIdx = cleanedResponse.lastIndexOf(']');
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        jsonMatch = [cleanedResponse.substring(startIdx, endIdx + 1)];
+      }
+    }
+
+    // Strategy 4: If response is empty or just [], return empty array
+    if (!jsonMatch && (cleanedResponse === '[]' || cleanedResponse === '')) {
+      logger.info("Inference returned no relationships");
       return [];
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    if (!jsonMatch) {
+      logger.warn("No JSON array found in inference response");
+      logger.debug(`Response (first 500 chars): ${cleanedResponse.substring(0, 500)}`);
+      return [];
+    }
+
+    // Extract and clean the JSON string
+    let jsonStr = jsonMatch[0].trim();
+
+    const parsed = JSON.parse(jsonStr);
     if (!Array.isArray(parsed)) {
       logger.warn("Inference response is not an array");
       return [];
@@ -176,7 +207,7 @@ export async function inferRelationships(store: KMSStore): Promise<InferredRelat
       messages: [
         {
           role: "user",
-          content: prompt,
+          content: prompt + "\n\nRESPOND WITH ONLY THE JSON ARRAY. NO ADDITIONAL TEXT.",
         },
       ],
     });

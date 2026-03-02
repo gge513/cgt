@@ -1,6 +1,6 @@
 ---
 date: 2026-02-06
-concepts: bookkeeper performance, financial management, budget constraints, staff compensation, finance committee, organizational leadership, nonprofit operations, performance accountability, resource allocation, conflict resolution
+concepts: bookkeeper performance, financial management, organizational leadership, compensation and hours, finance committee, staff accountability, budget constraints, Zen Center operations, employee management, cost analysis
 ---
 
 # Meeting Transcript

@@ -15,8 +15,15 @@ export async function GET(request: NextRequest) {
 
     const kmsData = JSON.parse(fs.readFileSync(kmsPath, 'utf-8'));
 
-    // Extract decisions from KMS data
-    const decisions = kmsData.decisions || [];
+    // Extract decisions from all meetings
+    const decisions: any[] = [];
+    if (kmsData.meetings && typeof kmsData.meetings === 'object') {
+      Object.values(kmsData.meetings).forEach((meeting: any) => {
+        if (meeting.decisions && Array.isArray(meeting.decisions)) {
+          decisions.push(...meeting.decisions);
+        }
+      });
+    }
 
     // Get query parameters for filtering
     const { searchParams } = new URL(request.url);

@@ -1,6 +1,6 @@
 ---
 date: 2026-01-30
-concepts: campus planning, fundraising strategy, architectural study, board governance, financial management, nonprofit operations, master plan development, community engagement, personal finance philosophy, consumer mindfulness
+concepts: fundraising campaign, campus master plan, architectural study, board governance, financial management, nonprofit operations, strategic planning, community engagement, property renovation, personal finance philosophy
 ---
 
 # Meeting Transcript

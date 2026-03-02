@@ -1,6 +1,6 @@
 ---
 date: 2025-12-19
-concepts: nonprofit management, committee structure, organizational finance, meeting efficiency, leadership strategy, Zen practice, board governance, stakeholder alignment, business operations, strategic planning
+concepts: nonprofit management, organizational structure, committee dynamics, financial accountability, leadership challenges, meeting effectiveness, strategic planning, Zen practice, relationship management, board governance
 ---
 
 # Meeting Transcript

@@ -15,11 +15,28 @@ export async function GET() {
 
     const kmsData = JSON.parse(fs.readFileSync(kmsPath, 'utf-8'));
 
-    // Calculate statistics
-    const decisions = kmsData.decisions || [];
-    const actions = kmsData.action_items || [];
-    const commitments = kmsData.commitments || [];
-    const risks = kmsData.risks || [];
+    // Calculate statistics by aggregating from all meetings
+    const decisions: any[] = [];
+    const actions: any[] = [];
+    const commitments: any[] = [];
+    const risks: any[] = [];
+
+    if (kmsData.meetings && typeof kmsData.meetings === 'object') {
+      Object.values(kmsData.meetings).forEach((meeting: any) => {
+        if (meeting.decisions && Array.isArray(meeting.decisions)) {
+          decisions.push(...meeting.decisions);
+        }
+        if (meeting.actions && Array.isArray(meeting.actions)) {
+          actions.push(...meeting.actions);
+        }
+        if (meeting.commitments && Array.isArray(meeting.commitments)) {
+          commitments.push(...meeting.commitments);
+        }
+        if (meeting.risks && Array.isArray(meeting.risks)) {
+          risks.push(...meeting.risks);
+        }
+      });
+    }
 
     const statusCounts = {
       pending: decisions.filter((d: any) => d.status === 'pending').length,
@@ -51,7 +68,7 @@ export async function GET() {
         (statusCounts.completed / decisions.length) * 100
       ) || 0,
       high_risk_count: riskCounts.high,
-      last_updated: kmsData.last_updated || 'Unknown',
+      last_updated: kmsData.lastUpdated || 'Unknown',
       total_meetings: Object.keys(kmsData.meetings || {}).length,
     });
   } catch (error) {

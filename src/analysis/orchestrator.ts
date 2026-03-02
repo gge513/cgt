@@ -10,7 +10,8 @@ import { parseFrontmatter, extractMarkdownContent } from "../utils/parsing";
 import { synthesizeAnalysis } from "./synthesisCoordinator";
 import { generateMarkdownReport } from "./reportGenerator";
 import { ManifestManager } from "../conversion/manifest";
-import { extractKMSData, KMSStoreManager, inferRelationships } from "../kms";
+import { extractKMSData, KMSStoreManager } from "../kms";
+import { inferRelationshipsWithDSPy } from "../kms/relationshipInferencerDSPy";
 import {
   TranscriptMetadata,
   Manifest,
@@ -257,7 +258,7 @@ export async function analyzeConvertedFiles(
       const kmsStore = kmsStoreManager.getStore();
 
       if (kmsStore && Object.keys(kmsStore.meetings).length > 0) {
-        const inferencedRelationships = await inferRelationships(kmsStore);
+        const inferencedRelationships = await inferRelationshipsWithDSPy(kmsStore);
 
         if (inferencedRelationships.length > 0) {
           // Write inferred relationships to file

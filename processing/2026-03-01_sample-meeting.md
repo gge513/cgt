@@ -1,6 +1,6 @@
 ---
 date: 2026-03-01
-concepts: API infrastructure, performance optimization, cost efficiency, user growth, machine learning, product features, team expansion, technical debt, user retention, Q2 priorities
+concepts: API infrastructure, performance optimization, cost efficiency, user growth, machine learning features, team expansion, technical debt, reliability and uptime, product development, strategic planning
 ---
 
 # Meeting Transcript

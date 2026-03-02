@@ -1,6 +1,6 @@
 ---
 date: 2026-02-27
-concepts: deck development, presentation strategy, document synthesis, collaborative planning, grant seeking, strategic planning, accomplishment documentation, timeline narrative, organizational goals, accountability structures
+concepts: presentation deck development, strategic planning, accomplishments documentation, grant seeking, collaborative work sessions, bird watching, travel, AI tools, KPIs and metrics, organizational strategy
 ---
 
 # Meeting Transcript
