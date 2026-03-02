@@ -10,10 +10,11 @@ import { parseFrontmatter, extractMarkdownContent } from "../utils/parsing";
 import { synthesizeAnalysis } from "./synthesisCoordinator";
 import { generateMarkdownReport } from "./reportGenerator";
 import { ManifestManager } from "../conversion/manifest";
-import { extractKMSData, KMSStoreManager } from "../kms";
+import { extractKMSData, KMSStoreManager, inferRelationships } from "../kms";
 import {
   TranscriptMetadata,
   Manifest,
+  InferredRelationshipsStore,
 } from "../types";
 
 const logger = getLogger();
@@ -247,6 +248,40 @@ export async function analyzeConvertedFiles(
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       logger.warn(`KMS extraction failed (non-fatal): ${message}`);
+    }
+
+    // Run relationship inference on KMS data
+    try {
+      logger.debug("Running relationship inference on KMS data...");
+      const kmsStoreManager = new KMSStoreManager();
+      const kmsStore = kmsStoreManager.getStore();
+
+      if (kmsStore && Object.keys(kmsStore.meetings).length > 0) {
+        const inferencedRelationships = await inferRelationships(kmsStore);
+
+        if (inferencedRelationships.length > 0) {
+          // Write inferred relationships to file
+          const inferredStore: InferredRelationshipsStore = {
+            version: 1,
+            inferredAt: new Date().toISOString(),
+            totalRelationships: inferencedRelationships.length,
+            relationships: inferencedRelationships,
+          };
+
+          const inferredPath = path.join(process.cwd(), ".processed_kms_inferred.json");
+          fs.writeFileSync(inferredPath, JSON.stringify(inferredStore, null, 2), "utf-8");
+
+          logger.info(`✓ Inferred ${inferencedRelationships.length} relationships`);
+          logger.debug(`Inferred relationships saved to .processed_kms_inferred.json`);
+        } else {
+          logger.debug("No relationships inferred from KMS data");
+        }
+      } else {
+        logger.debug("No KMS data available for relationship inference");
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.warn(`Relationship inference failed (non-fatal): ${message}`);
     }
 
     // Update manifest with analysis cache for processed files

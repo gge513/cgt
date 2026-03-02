@@ -298,3 +298,37 @@ export interface KMSStore {
   lastUpdated: string;         // ISO timestamp
   meetings: Record<string, KMSData>; // Keyed by meeting name
 }
+
+// ============================================================================
+// RELATIONSHIP INFERENCE TYPES
+// ============================================================================
+
+/**
+ * A single inferred relationship between decisions/actions
+ */
+export interface InferredRelationship {
+  id: string;                  // Unique identifier
+  fromId: string;              // ID of source decision/action/risk
+  fromType: "decision" | "action" | "commitment" | "risk"; // Type of source
+  toId: string;                // ID of target decision/action/risk
+  toType: "decision" | "action" | "commitment" | "risk"; // Type of target
+  relationshipType: "blocks" | "impacts" | "depends_on" | "related_to";
+  description: string;         // Human-readable description
+  confidence: number;          // 0-1 confidence score from Claude
+  reasoningBrief: string;      // Brief explanation of relationship
+  fromMeeting: string;         // Meeting of source item
+  toMeeting: string;           // Meeting of target item
+  inferredAt: string;          // ISO timestamp
+  validated?: boolean;         // Whether user has validated this
+  validatedAt?: string;        // ISO timestamp of validation
+}
+
+/**
+ * Store of inferred relationships
+ */
+export interface InferredRelationshipsStore {
+  version: 1;
+  inferredAt: string;          // ISO timestamp of inference run
+  totalRelationships: number;
+  relationships: InferredRelationship[];
+}

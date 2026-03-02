@@ -1,0 +1,172 @@
+{
+  "version": 1,
+  "lastUpdated": "2026-03-02T04:37:19.633Z",
+  "meetings": {
+    "2025-11-22_Danielle-George Weekly Meeting Transcript (3)": {
+      "meeting": "2025-11-22_Danielle-George Weekly Meeting Transcript (3)",
+      "analyzedAt": "2026-03-02T04:37:19.633Z",
+      "date": "Unknown",
+      "model": "claude-haiku-4-5-20251001",
+      "decisions": [
+        {
+          "id": "DEC001",
+          "text": "Hire external bookkeeper (Veronique) to replace Amy and remediate financial control breakdown. Veronique has proven experience as former director of Quantum Europe and books manager for Cambridge Zen Center with strong community recommendations.",
+          "owner": "Quan Heng Sunim",
+          "relatedTopics": [
+            "Financial Controls",
+            "Bookkeeping",
+            "Staff Management"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "DEC002",
+          "text": "Realign Director compensation from $40/hour (30+ hours/week) to sustainable executive-level rate reflecting actual role requirements and market standards for nonprofit director positions.",
+          "owner": "Quan Heng Sunim",
+          "relatedTopics": [
+            "Compensation",
+            "Financial Sustainability",
+            "Leadership"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "DEC003",
+          "text": "Formalize role delineation between Abbot and Director positions with clear decision-making authority, responsibilities, and governance structure to prevent scope creep and triangulation.",
+          "owner": "Quan Heng Sunim",
+          "relatedTopics": [
+            "Governance",
+            "Leadership Structure",
+            "Accountability"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "DEC004",
+          "text": "Implement financial controls including complete account reconciliation (January-September), documented processes, clear categorization system, and system-generated P&L reporting via QuickBooks.",
+          "owner": "Danielle Alpher",
+          "relatedTopics": [
+            "Financial Controls",
+            "Accountability",
+            "Compliance"
+          ],
+          "status": "pending"
+        },
+        {
+          "id": "DEC005",
+          "text": "Evaluate Quantum Americas partnership for financial viability and ROI; address five-year billing discrepancy (2019-2024) and clarify contract terms and obligations.",
+          "owner": "Danielle Alpher",
+          "relatedTopics": [
+            "Strategic Partnerships",
+            "Financial Management",
+            "Risk Management"
+          ],
+          "status": "pending"
+        }
+      ],
+      "actionItems": [
+        {
+          "id": "ACT001",
+          "text": "Complete full financial reconciliation for January-September unreconciled accounts with qualified accountant oversight. Verify all transactions, identify discrepancies, and establish accurate baseline P&L.",
+          "owner": "Danielle Alpher",
+          "dueDate": null,
+          "status": "in-progress",
+          "blockers": [
+            "Bookkeeper (Amy) lacks competency to execute independently"
+          ]
+        },
+        {
+          "id": "ACT002",
+          "text": "Develop and document comprehensive written job descriptions, performance expectations, and financial control policies for all administrative and bookkeeping roles with clear accountability mechanisms.",
+          "owner": "Danielle Alpher",
+          "dueDate": null,
+          "status": "not-started",
+          "blockers": []
+        },
+        {
+          "id": "ACT003",
+          "text": "Conduct strategic planning retreat with planning committee (Danielle, George, Jose, Colin) to clarify residential program goals, fundraising strategy, and organizational priorities aligned with mission.",
+          "owner": "Danielle Alpher",
+          "dueDate": null,
+          "status": "not-started",
+          "blockers": [
+            "Operational firefighting consuming leadership capacity"
+          ]
+        },
+        {
+          "id": "ACT004",
+          "text": "Establish Finance Committee governance structure focused on strategic financial oversight (KPIs, salary analysis, fundraising metrics) rather than transactional operational details.",
+          "owner": "George Eastwood",
+          "dueDate": null,
+          "status": "not-started",
+          "blockers": []
+        },
+        {
+          "id": "ACT005",
+          "text": "Address Amy's performance through formal performance improvement plan with clear metrics and timeline, or proceed with termination decision if improvement targets not met within defined period.",
+          "owner": "Quan Heng Sunim",
+          "dueDate": null,
+          "status": "blocked",
+          "blockers": [
+            "Leadership hesitation to make difficult personnel decisions"
+          ]
+        }
+      ],
+      "commitments": [
+        {
+          "id": "COM001",
+          "text": "Danielle committed to reducing her Director workload from 30+ hours/week to sustainable level once administrative support and bookkeeping function are remediated through external hire and organizational restructuring.",
+          "owner": "Danielle Alpher",
+          "dueDate": null,
+          "status": "pending"
+        },
+        {
+          "id": "COM002",
+          "text": "George committed to providing ongoing strategic advisory support and nonprofit governance expertise to help Providence Zen Center establish sustainable organizational structure and financial controls.",
+          "owner": "George Eastwood",
+          "dueDate": null,
+          "status": "in-progress"
+        },
+        {
+          "id": "COM003",
+          "text": "Leadership committed to implementing formal documentation system for financial processes, decisions, and policies to replace ad-hoc management and ensure institutional knowledge preservation.",
+          "owner": "Danielle Alpher",
+          "dueDate": null,
+          "status": "pending"
+        }
+      ],
+      "risks": [
+        {
+          "id": "RISK001",
+          "text": "Director burnout and potential departure - Danielle working 30+ hours/week at $40/hour for executive-level role while considering leaving organization due to unsustainable workload and unresolved operational issues.",
+          "severity": "high",
+          "mitigation": "Immediately realign compensation to market rates, reduce hours through external bookkeeper hire, and implement strategic planning to address operational dysfunction."
+        },
+        {
+          "id": "RISK002",
+          "text": "Continued financial mismanagement threatens donor confidence, fundraising capability, grant eligibility, and 990 filing compliance. Months of unreconciled accounts and lack of accurate P&L prevent credible financial reporting.",
+          "severity": "high",
+          "mitigation": "Hire qualified external bookkeeper (Veronique), complete full reconciliation, implement documented financial controls, and generate system-based P&L reporting."
+        },
+        {
+          "id": "RISK003",
+          "text": "Leadership avoidance of difficult personnel decisions (Amy's underperformance despite training) undermines organizational credibility, wastes resources, and erodes stakeholder confidence in management effectiveness.",
+          "severity": "high",
+          "mitigation": "Implement formal performance improvement plan with clear metrics and timeline; proceed with termination decision if targets not met. Establish documented hiring and accountability processes."
+        },
+        {
+          "id": "RISK004",
+          "text": "Lack of succession planning and key person risk for critical roles (Abbot Sunim, Director Danielle). No documented processes, policies, or identified successors for institutional continuity.",
+          "severity": "medium",
+          "mitigation": "Develop mentorship structure for future leadership (vice abbot model), document all processes and decision-making authority, establish clear governance roles and succession pathway."
+        },
+        {
+          "id": "RISK005",
+          "text": "Board and stakeholder alignment eroding - Chip considering leaving Finance Committee, Mark expressing frustration, and triangulation in communication preventing coordinated execution and strategic alignment.",
+          "severity": "medium",
+          "mitigation": "Establish clear governance structure, implement direct transparent communication protocols, redesign Finance Committee for strategic focus, provide regular stakeholder updates on progress."
+        }
+      ]
+    }
+  }
+}

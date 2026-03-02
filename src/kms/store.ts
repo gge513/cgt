@@ -57,6 +57,13 @@ export class KMSStoreManager {
   }
 
   /**
+   * Get the current KMS store (for relationship inference and analysis)
+   */
+  getStore(): KMSStore {
+    return this.store;
+  }
+
+  /**
    * Record KMS data for a meeting
    */
   recordKMSData(kmsData: KMSData): void {

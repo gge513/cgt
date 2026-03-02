@@ -11,6 +11,9 @@ import {
   ColumnFiltersState,
 } from '@tanstack/react-table';
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useValidationStore } from '@/lib/stores/validations';
+import { RelationshipValidator } from './RelationshipValidator';
 
 export interface Decision {
   id?: string;
@@ -266,25 +269,87 @@ export function DecisionsTable({ decisions, onSelectDecision }: DecisionsTablePr
             </div>
           </div>
 
-          {/* Task #5 Placeholders */}
-          <div className="mt-6 pt-6 border-t border-slate-200">
-            <p className="text-xs text-slate-500 mb-3">
-              Coming in next iteration:
-            </p>
-            <div className="space-y-2 text-sm">
-              <div className="text-slate-400">
-                • AI-Inferred Relationships - Decisions this decision blocks
-              </div>
-              <div className="text-slate-400">
-                • Validation UI - Confirm or reject relationship inferences
-              </div>
-              <div className="text-slate-400">
-                • Action Buttons - Mark escalated, resolved, or high priority
-              </div>
-            </div>
-          </div>
+          {/* AI-Inferred Relationships */}
+          <RelationshipValidatorSection
+            decision={selectedDecision}
+          />
         </div>
       )}
     </div>
+  );
+}
+
+interface RelationshipValidatorSectionProps {
+  decision: Decision;
+}
+
+function RelationshipValidatorSection({
+  decision,
+}: RelationshipValidatorSectionProps) {
+  const { markValid, markRejected, isValidated, isRejected } =
+    useValidationStore();
+
+  const { data: relationshipsData, isLoading, error } = useQuery({
+    queryKey: ['relationships', decision.id],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/kms/relationships?decisionId=${decision.id}`
+      );
+      if (!response.ok) {
+        throw new Error('Failed to fetch relationships');
+      }
+      return response.json();
+    },
+    enabled: !!decision.id,
+  });
+
+  const handleValidate = async (
+    relationshipId: string,
+    validated: boolean
+  ) => {
+    try {
+      if (validated) {
+        await markValid(relationshipId);
+      } else {
+        await markRejected(relationshipId);
+      }
+    } catch (error) {
+      console.error('Failed to save validation:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="mt-6 pt-6 border-t border-slate-200">
+        <div className="animate-pulse">
+          <div className="h-4 bg-slate-200 rounded w-1/4 mb-4"></div>
+          <div className="space-y-3">
+            <div className="h-3 bg-slate-200 rounded"></div>
+            <div className="h-3 bg-slate-200 rounded w-5/6"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mt-6 pt-6 border-t border-slate-200">
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-700">
+            Failed to load relationships. Please try again.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <RelationshipValidator
+      relationships={relationshipsData?.relationships || []}
+      decisionId={decision.id || ''}
+      decisionText={decision.text}
+      onValidate={handleValidate}
+    />
   );
 }
