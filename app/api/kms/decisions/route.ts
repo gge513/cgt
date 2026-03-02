@@ -8,9 +8,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import type { KMSStore, KMSDecision } from '@/src/types';
+import type { KMSDecision } from '@/src/types';
 import { validateAuth } from '@/lib/auth';
-import { getKMSData, cacheGet, cacheSet } from '@/lib/cache';
+import { cacheGet, cacheSet } from '@/lib/cache';
+import { getKMSStore } from '@/lib/kms';
 import { getLogger } from '@/src/utils/logging';
 
 const logger = getLogger();
@@ -42,24 +43,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(cached);
     }
 
-    // Load KMS data (uses mtime cache)
-    const kmsData: KMSStore = getKMSData();
+    // Load decisions using the abstraction layer
+    const store = getKMSStore();
+    const decisions: KMSDecision[] = store.getDecisions();
 
-    if (!kmsData || !kmsData.meetings) {
+    if (!decisions || decisions.length === 0) {
       return NextResponse.json(
         { error: 'KMS data not found. Run npm run analyze first.' },
         { status: 404 }
       );
-    }
-
-    // Extract decisions from all meetings
-    const decisions: KMSDecision[] = [];
-    if (kmsData.meetings && typeof kmsData.meetings === 'object') {
-      Object.values(kmsData.meetings).forEach((meeting) => {
-        if (meeting.decisions && Array.isArray(meeting.decisions)) {
-          decisions.push(...meeting.decisions);
-        }
-      });
     }
 
     // Filter decisions

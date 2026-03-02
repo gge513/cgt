@@ -10,9 +10,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
-import * as path from 'path';
+import type { KMSDecision } from '@/src/types';
 import { validateAuth } from '@/lib/auth';
 import { cacheGet, cacheSet, cacheInvalidatePattern } from '@/lib/cache';
+import { getKMSStore } from '@/lib/kms';
 import { getLogger } from '@/src/utils/logging';
 
 const logger = getLogger();
@@ -70,46 +71,43 @@ function saveActions(store: ActionsStore): void {
 }
 
 /**
- * Apply action to KMS store
+ * Apply action to KMS store using the abstraction layer
+ * Currently just logs the action; future enhancements could update decision status
  */
 function applyActionToKMS(decisionId: string, action: string): void {
-  const kmsPath = '.processed_kms.json';
-
   try {
-    if (!fs.existsSync(kmsPath)) {
+    const store = getKMSStore();
+    const kmsData = store.loadData();
+
+    if (!kmsData.meetings) {
       return;
     }
 
-    const content = fs.readFileSync(kmsPath, 'utf-8');
-    const kmsStore = JSON.parse(content);
+    // Verify decision exists in KMS store
+    let found = false;
+    Object.values(kmsData.meetings).forEach((meeting) => {
+      if (!meeting.decisions) return;
 
-    // Find and update the decision
-    const decision = kmsStore.decisions?.find(
-      (d: any) => d.id === decisionId
-    );
+      const decision = meeting.decisions.find(
+        (d: KMSDecision) => d.id === decisionId
+      );
 
-    if (!decision) {
-      console.warn(`Decision ${decisionId} not found in KMS store`);
+      if (decision) {
+        found = true;
+        // Future: Could update decision properties here if schema allows
+        // For now, just record that action was taken (stored in ActionsStore)
+      }
+    });
+
+    if (!found) {
+      logger.warn(`Decision ${decisionId} not found in KMS store`);
       return;
     }
 
-    // Apply the action
-    switch (action) {
-      case 'escalate':
-        decision.is_escalated = true;
-        break;
-      case 'resolve':
-        decision.status = 'resolved';
-        break;
-      case 'high-priority':
-        decision.severity = 'high';
-        break;
-    }
-
-    // Write back
-    fs.writeFileSync(kmsPath, JSON.stringify(kmsStore, null, 2), 'utf-8');
+    logger.debug(`Recorded action ${action} for decision ${decisionId}`);
   } catch (error) {
-    console.error('Failed to apply action to KMS:', error);
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error(`Failed to apply action to KMS: ${message}`);
   }
 }
 

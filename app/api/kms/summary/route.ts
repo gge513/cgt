@@ -10,9 +10,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import type { KMSStore, KMSDecision, KMSActionItem, KMSCommitment, KMSRisk } from '@/src/types';
 import { validateAuth } from '@/lib/auth';
-import { getKMSData, cacheGet, cacheSet } from '@/lib/cache';
+import { cacheGet, cacheSet } from '@/lib/cache';
+import { getKMSStore } from '@/lib/kms';
 import { getLogger } from '@/src/utils/logging';
 
 const logger = getLogger();
@@ -35,37 +35,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(cachedSummary);
     }
 
-    // Load KMS data (uses mtime cache)
-    const kmsData: KMSStore = getKMSData();
+    // Load KMS data using the abstraction layer
+    const store = getKMSStore();
+    const kmsData = store.loadData();
+    const decisions = store.getDecisions();
+    const actions = store.getActions();
+    const commitments = store.getCommitments();
+    const risks = store.getRisks();
 
-    if (!kmsData || !kmsData.meetings) {
+    if (!decisions || decisions.length === 0) {
       return NextResponse.json(
         { error: 'KMS data not found. Run npm run analyze first.' },
         { status: 404 }
       );
-    }
-
-    // Calculate statistics by aggregating from all meetings
-    const decisions: KMSDecision[] = [];
-    const actions: KMSActionItem[] = [];
-    const commitments: KMSCommitment[] = [];
-    const risks: KMSRisk[] = [];
-
-    if (kmsData.meetings && typeof kmsData.meetings === 'object') {
-      Object.values(kmsData.meetings).forEach((meeting) => {
-        if (meeting.decisions && Array.isArray(meeting.decisions)) {
-          decisions.push(...meeting.decisions);
-        }
-        if (meeting.actionItems && Array.isArray(meeting.actionItems)) {
-          actions.push(...meeting.actionItems);
-        }
-        if (meeting.commitments && Array.isArray(meeting.commitments)) {
-          commitments.push(...meeting.commitments);
-        }
-        if (meeting.risks && Array.isArray(meeting.risks)) {
-          risks.push(...meeting.risks);
-        }
-      });
     }
 
     const statusCounts = {
