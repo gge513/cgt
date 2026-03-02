@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+*.js
+*.js.map
+*.d.ts
+
+# Logs
+*.log
+.conversion.log
+.pipeline.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+coverage/
+.nyc_output/
+
+# State/Cache
+.processed_manifest.json
+
+# Temp files
+*.tmp
+.temp/
